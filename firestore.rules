@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Función auxiliar para verificar si el usuario está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Función para obtener el rol del usuario desde la colección 'usuarios'
+    function getUserData() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        getUserData().rol == 'ADMIN' || 
+        request.auth.token.email.matches('.*admin.*')
+      );
+    }
+
+    function isDocente() {
+      return isAuthenticated() && (
+        getUserData().rol == 'DOCENTE' || 
+        getUserData().rol == 'ADMIN'
+      );
+    }
+
+    function isAcudiente() {
+      return isAuthenticated();
+    }
+
+    // Colección de Usuarios
+    match /usuarios/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Tablas Paramétricas y CRUD Admin (Sedes, Grados, Grupos, Asignaturas, EPS, ARL, Tipos Doc, etc)
+    match /sedes/{id} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+    match /grados/{id} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+    match /grupos/{id} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+    match /asignaturas/{id} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+    match /eps/{id} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+    match /arl/{id} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+    match /tipos_documento/{id} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+    match /departamentos/{id} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+    match /ciudades/{id} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+
+    // Personas: Estudiantes, Docentes, Acudientes, Padres
+    match /estudiantes/{id} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+    match /docentes/{id} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+    match /acudientes/{id} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+    match /padres_familia/{id} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+
+    // Control de Asistencias
+    match /asistencias/{id} {
+      allow read: if isAuthenticated();
+      allow create, update: if isDocente() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Excusas Médicas / Justificaciones
+    match /excusas/{id} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isDocente() || isAdmin();
+    }
+  }
+}

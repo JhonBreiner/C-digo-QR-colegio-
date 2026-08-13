@@ -1,0 +1,6 @@
+{
+  "name": "Control de Asistencia QR - Softworker",
+  "description": "Sistema de gestión estudiantil, carnetización con QR y control de asistencia para la Institución Educativa Técnica Francisco José de Caldas",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
