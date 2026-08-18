@@ -65,26 +65,47 @@ export const INITIAL_SEED_DATA = {
     { id: 'CIU-03', nombre_ciudad: 'Neiva', departamento_id: 'DEP-41' },
   ],
   asignaturas: [
-    { id: 'ASIG-01', nombre_asignatura: 'Ciencias Sociales', area: 'Ciencias Sociales' },
-    { id: 'ASIG-02', nombre_asignatura: 'Ciencias Políticas y Económicas', area: 'Ciencias Sociales' },
-    { id: 'ASIG-03', nombre_asignatura: 'Filosofía', area: 'Filosofía' },
-    { id: 'ASIG-04', nombre_asignatura: 'Lengua Castellana', area: 'Humanidades' },
-    { id: 'ASIG-05', nombre_asignatura: 'Cátedra de Emprendimiento', area: 'Emprendimiento' },
-    { id: 'ASIG-06', nombre_asignatura: 'Salud Ocupacional', area: 'Técnica' },
-    { id: 'ASIG-07', nombre_asignatura: 'Matemáticas', area: 'Matemáticas' },
-    { id: 'ASIG-08', nombre_asignatura: 'Lógica de Programación', area: 'Técnica de Sistemas' },
-    { id: 'ASIG-09', nombre_asignatura: 'Mantenimiento de Computadores', area: 'Técnica de Sistemas' },
-    { id: 'ASIG-10', nombre_asignatura: 'Idioma Extranjero (Inglés)', area: 'Idiomas' },
-    { id: 'ASIG-11', nombre_asignatura: 'Química', area: 'Ciencias Naturales' },
-    { id: 'ASIG-12', nombre_asignatura: 'Cátedra de Paz', area: 'Sociales y Ciudadanía' },
-    { id: 'ASIG-13', nombre_asignatura: 'Tecnología e Informática', area: 'Tecnología' },
-    { id: 'ASIG-14', nombre_asignatura: 'Educación Artística', area: 'Artes' },
-    { id: 'ASIG-15', nombre_asignatura: 'Bases de Datos', area: 'Técnica de Sistemas' },
-    { id: 'ASIG-16', nombre_asignatura: 'Educación Ética y Valores', area: 'Ética' },
-    { id: 'ASIG-17', nombre_asignatura: 'Educación Religiosa', area: 'Religión' },
-    { id: 'ASIG-18', nombre_asignatura: 'Educación Física, Recreación y Deportes', area: 'Educación Física' },
-    { id: 'ASIG-19', nombre_asignatura: 'Física', area: 'Ciencias Naturales' },
-    { id: 'ASIG-20', nombre_asignatura: 'Libre / Asignación Dinámica', area: 'General' },
+    // ÁREA: CIENCIAS NATURALES Y EDUCACIÓN AMBIENTAL
+    { id: 'ASIG-19', nombre_asignatura: 'Física', area: 'Ciencias Naturales y Educación Ambiental', ihs: 3, docente_titular: 'José Edgar Trilleras Trilleras' },
+    { id: 'ASIG-11', nombre_asignatura: 'Química', area: 'Ciencias Naturales y Educación Ambiental', ihs: 3, docente_titular: 'Mercy Eloisa Herrada Yara' },
+    { id: 'ASIG-21', nombre_asignatura: 'Ciencias Naturales y Educación Ambiental', area: 'Ciencias Naturales y Educación Ambiental', ihs: 6, docente_titular: 'Docente Ciencias Naturales' },
+    
+    // ÁREA: CIENCIAS SOCIALES
+    { id: 'ASIG-01', nombre_asignatura: 'Ciencias Sociales', area: 'Ciencias Sociales', ihs: 3, docente_titular: 'Jamer Andrade Vargas' },
+    { id: 'ASIG-12', nombre_asignatura: 'Cátedra de Paz', area: 'Ciencias Sociales', ihs: 1, docente_titular: 'Deisy Yaneth Medina Murcia' },
+    { id: 'ASIG-02', nombre_asignatura: 'Ciencias Políticas y Económicas', area: 'Ciencias Económicas y Políticas', ihs: 2, docente_titular: 'Jamer Andrade Vargas' },
+    { id: 'ASIG-03', nombre_asignatura: 'Filosofía', area: 'Filosofía', ihs: 2, docente_titular: 'Jamer Andrade Vargas' },
+    
+    // ÁREA: HUMANIDADES
+    { id: 'ASIG-04', nombre_asignatura: 'Lengua Castellana', area: 'Humanidades: Lengua Castellana', ihs: 4, docente_titular: 'Luis Eduardo Cuellar' },
+    { id: 'ASIG-10', nombre_asignatura: 'Inglés (Idioma Extranjero)', area: 'Humanidades: Idioma Extranjero', ihs: 3, docente_titular: 'Larissa Alejandra González Rodríguez' },
+    
+    // ÁREA: MATEMÁTICAS
+    { id: 'ASIG-07', nombre_asignatura: 'Matemáticas', area: 'Matemáticas', ihs: 4, docente_titular: 'John Fredy Díaz' },
+    
+    // ÁREA: TECNOLOGÍA E INFORMÁTICA
+    { id: 'ASIG-13', nombre_asignatura: 'Tecnología e Informática', area: 'Tecnología e Informática', ihs: 1, docente_titular: 'Jhon Jairo Molano Jiménez' },
+    
+    // ÁREA: EDUCACIÓN ARTÍSTICA
+    { id: 'ASIG-14', nombre_asignatura: 'Educación Artística', area: 'Educación Artística', ihs: 1, docente_titular: 'Ruth Lucena Oliveros Culma' },
+    
+    // ÁREA: ÉTICA Y VALORES
+    { id: 'ASIG-16', nombre_asignatura: 'Educación Ética y en Valores Humanos', area: 'Educación Ética y en Valores Humanos', ihs: 1, docente_titular: 'Silenia Rodríguez Matoma' },
+    
+    // ÁREA: EDUCACIÓN RELIGIOSA
+    { id: 'ASIG-17', nombre_asignatura: 'Educación Religiosa', area: 'Educación Religiosa', ihs: 1, docente_titular: 'Silenia Rodríguez Matoma' },
+    
+    // ÁREA: EDUCACIÓN FÍSICA
+    { id: 'ASIG-18', nombre_asignatura: 'Educación Física, Recreación y Deportes', area: 'Educación Física, Recreación y Deportes', ihs: 2, docente_titular: 'Juan Sebastián Román Salazar' },
+    
+    // ÁREA: CÁTEDRA DE EMPRENDIMIENTO
+    { id: 'ASIG-05', nombre_asignatura: 'Cátedra de Emprendimiento', area: 'Cátedra de Emprendimiento', ihs: 1, docente_titular: 'Luis Eduardo Cuellar' },
+    
+    // ÁREA: ESPECIALIDAD TÉCNICA (SISTEMAS)
+    { id: 'ASIG-06', nombre_asignatura: 'Salud Ocupacional', area: 'Especialidad', ihs: 1, docente_titular: 'Luis Eduardo Cuellar' },
+    { id: 'ASIG-08', nombre_asignatura: 'Lógica de Programación', area: 'Especialidad', ihs: 3, docente_titular: 'Helvis González Cutiva' },
+    { id: 'ASIG-09', nombre_asignatura: 'Mantenimiento de Computadores', area: 'Especialidad', ihs: 1, docente_titular: 'Helvis González Cutiva' },
+    { id: 'ASIG-15', nombre_asignatura: 'Bases de Datos', area: 'Especialidad', ihs: 2, docente_titular: 'Ivan Andrés Perdomo' },
   ],
   acudientes: [
     { id: 'ACU-01', tipo_doc_id: 'TD-02', numero_doc: '28549302', nombres: 'María Elena', apellidos: 'Tique Capera', telefono: '3124598021', correo: 'maria.tique@gmail.com', direccion: 'Calle 4 # 8-22 Natagaima' },
@@ -106,43 +127,7 @@ export const INITIAL_SEED_DATA = {
       telefono: '3118901201', 
       asignatura_id: 'ASIG-01',
       asignaturas_ids: ['ASIG-01', 'ASIG-02', 'ASIG-03'],
-      asignaturas_nombres: ['Ciencias Sociales', 'Ciencias Políticas y Económicas', 'Filosofía']
-    },
-    { 
-      id: 'DOC-02', 
-      tipo_doc_id: 'TD-02', 
-      numero_doc: '1110543202', 
-      nombres: 'María Camila', 
-      apellidos: 'Bernal', 
-      correo: 'camila.bernal@ietcaldas.edu.co', 
-      telefono: '3118901202', 
-      asignatura_id: 'ASIG-20',
-      asignaturas_ids: ['ASIG-20'],
-      asignaturas_nombres: ['Libre / Asignación Dinámica']
-    },
-    { 
-      id: 'DOC-03', 
-      tipo_doc_id: 'TD-02', 
-      numero_doc: '1110543203', 
-      nombres: 'Arnuvi', 
-      apellidos: 'Chico', 
-      correo: 'arnuvi.chico@ietcaldas.edu.co', 
-      telefono: '3118901203', 
-      asignatura_id: 'ASIG-20',
-      asignaturas_ids: ['ASIG-20'],
-      asignaturas_nombres: ['Libre / Asignación Dinámica']
-    },
-    { 
-      id: 'DOC-04', 
-      tipo_doc_id: 'TD-02', 
-      numero_doc: '1110543204', 
-      nombres: 'María Lida', 
-      apellidos: 'Chila', 
-      correo: 'maria.chila@ietcaldas.edu.co', 
-      telefono: '3118901204', 
-      asignatura_id: 'ASIG-20',
-      asignaturas_ids: ['ASIG-20'],
-      asignaturas_nombres: ['Libre / Asignación Dinámica']
+      asignaturas_nombres: ['Ciencias Sociales (IHS: 3)', 'Ciencias Políticas y Económicas (IHS: 2)', 'Filosofía (IHS: 2)']
     },
     { 
       id: 'DOC-05', 
@@ -154,7 +139,7 @@ export const INITIAL_SEED_DATA = {
       telefono: '3118901205', 
       asignatura_id: 'ASIG-04',
       asignaturas_ids: ['ASIG-04', 'ASIG-05', 'ASIG-06'],
-      asignaturas_nombres: ['Lengua Castellana', 'Cátedra de Emprendimiento', 'Salud Ocupacional']
+      asignaturas_nombres: ['Lengua Castellana (IHS: 4)', 'Cátedra de Emprendimiento (IHS: 1)', 'Salud Ocupacional (IHS: 1)']
     },
     { 
       id: 'DOC-06', 
@@ -166,7 +151,7 @@ export const INITIAL_SEED_DATA = {
       telefono: '3118901206', 
       asignatura_id: 'ASIG-07',
       asignaturas_ids: ['ASIG-07'],
-      asignaturas_nombres: ['Matemáticas']
+      asignaturas_nombres: ['Matemáticas (IHS: 4)']
     },
     { 
       id: 'DOC-07', 
@@ -178,7 +163,7 @@ export const INITIAL_SEED_DATA = {
       telefono: '3118901207', 
       asignatura_id: 'ASIG-08',
       asignaturas_ids: ['ASIG-08', 'ASIG-09'],
-      asignaturas_nombres: ['Lógica de Programación', 'Mantenimiento de Computadores']
+      asignaturas_nombres: ['Lógica de Programación (IHS: 3)', 'Mantenimiento de Computadores (IHS: 1)']
     },
     { 
       id: 'DOC-08', 
@@ -190,43 +175,31 @@ export const INITIAL_SEED_DATA = {
       telefono: '3118901208', 
       asignatura_id: 'ASIG-10',
       asignaturas_ids: ['ASIG-10'],
-      asignaturas_nombres: ['Idioma Extranjero (Inglés)']
-    },
-    { 
-      id: 'DOC-09', 
-      tipo_doc_id: 'TD-02', 
-      numero_doc: '1110543209', 
-      nombres: 'José Jairo', 
-      apellidos: 'Hernández', 
-      correo: 'jairo.hernandez@ietcaldas.edu.co', 
-      telefono: '3118901209', 
-      asignatura_id: 'ASIG-20',
-      asignaturas_ids: ['ASIG-20'],
-      asignaturas_nombres: ['Libre / Asignación Dinámica']
+      asignaturas_nombres: ['Inglés / Humanidades: Idioma Extranjero (IHS: 3)']
     },
     { 
       id: 'DOC-10', 
       tipo_doc_id: 'TD-02', 
       numero_doc: '1110543210', 
-      nombres: 'Mercy Eloaisa', 
+      nombres: 'Mercy Eloisa', 
       apellidos: 'Herrada Yara', 
       correo: 'mercy.herrada@ietcaldas.edu.co', 
       telefono: '3118901210', 
       asignatura_id: 'ASIG-11',
       asignaturas_ids: ['ASIG-11'],
-      asignaturas_nombres: ['Química']
+      asignaturas_nombres: ['Química / Ciencias Naturales (IHS: 3)']
     },
     { 
       id: 'DOC-11', 
       tipo_doc_id: 'TD-02', 
       numero_doc: '1110543211', 
       nombres: 'Deisy Yaneth', 
-      apellidos: 'Medinas Murcia', 
-      correo: 'deisy.medinas@ietcaldas.edu.co', 
+      apellidos: 'Medina Murcia', 
+      correo: 'deisy.medina@ietcaldas.edu.co', 
       telefono: '3118901211', 
       asignatura_id: 'ASIG-12',
       asignaturas_ids: ['ASIG-12'],
-      asignaturas_nombres: ['Cátedra de Paz']
+      asignaturas_nombres: ['Cátedra de Paz / Ciencias Sociales (IHS: 1)']
     },
     { 
       id: 'DOC-12', 
@@ -238,7 +211,7 @@ export const INITIAL_SEED_DATA = {
       telefono: '3118901212', 
       asignatura_id: 'ASIG-13',
       asignaturas_ids: ['ASIG-13'],
-      asignaturas_nombres: ['Tecnología e Informática']
+      asignaturas_nombres: ['Informática / Tecnología e Informática (IHS: 1)']
     },
     { 
       id: 'DOC-13', 
@@ -250,19 +223,7 @@ export const INITIAL_SEED_DATA = {
       telefono: '3118901213', 
       asignatura_id: 'ASIG-14',
       asignaturas_ids: ['ASIG-14'],
-      asignaturas_nombres: ['Educación Artística']
-    },
-    { 
-      id: 'DOC-14', 
-      tipo_doc_id: 'TD-02', 
-      numero_doc: '1110543214', 
-      nombres: 'Daniel Octavio', 
-      apellidos: 'Peralta', 
-      correo: 'daniel.peralta@ietcaldas.edu.co', 
-      telefono: '3118901214', 
-      asignatura_id: 'ASIG-20',
-      asignaturas_ids: ['ASIG-20'],
-      asignaturas_nombres: ['Libre / Asignación Dinámica']
+      asignaturas_nombres: ['Educación Artística (IHS: 1)']
     },
     { 
       id: 'DOC-15', 
@@ -274,7 +235,7 @@ export const INITIAL_SEED_DATA = {
       telefono: '3118901215', 
       asignatura_id: 'ASIG-15',
       asignaturas_ids: ['ASIG-15'],
-      asignaturas_nombres: ['Bases de Datos']
+      asignaturas_nombres: ['Bases de Datos / Especialidad Técnica (IHS: 2)']
     },
     { 
       id: 'DOC-16', 
@@ -286,7 +247,7 @@ export const INITIAL_SEED_DATA = {
       telefono: '3118901216', 
       asignatura_id: 'ASIG-16',
       asignaturas_ids: ['ASIG-16', 'ASIG-17'],
-      asignaturas_nombres: ['Educación Ética y Valores', 'Educación Religiosa']
+      asignaturas_nombres: ['Educación Ética y en Valores Humanos (IHS: 1)', 'Educación Religiosa (IHS: 1)']
     },
     { 
       id: 'DOC-17', 
@@ -298,7 +259,7 @@ export const INITIAL_SEED_DATA = {
       telefono: '3118901217', 
       asignatura_id: 'ASIG-18',
       asignaturas_ids: ['ASIG-18'],
-      asignaturas_nombres: ['Educación Física, Recreación y Deportes']
+      asignaturas_nombres: ['Educación Física, Recreación y Deportes (IHS: 2)']
     },
     { 
       id: 'DOC-18', 
@@ -310,19 +271,7 @@ export const INITIAL_SEED_DATA = {
       telefono: '3118901218', 
       asignatura_id: 'ASIG-19',
       asignaturas_ids: ['ASIG-19'],
-      asignaturas_nombres: ['Física']
-    },
-    { 
-      id: 'DOC-19', 
-      tipo_doc_id: 'TD-02', 
-      numero_doc: '1110543219', 
-      nombres: 'Leonor', 
-      apellidos: 'Useche', 
-      correo: 'leonor.useche@ietcaldas.edu.co', 
-      telefono: '3118901219', 
-      asignatura_id: 'ASIG-20',
-      asignaturas_ids: ['ASIG-20'],
-      asignaturas_nombres: ['Libre / Asignación Dinámica']
+      asignaturas_nombres: ['Física / Ciencias Naturales (IHS: 3)']
     }
   ],
   estudiantes: [
@@ -537,9 +486,266 @@ export const INITIAL_SEED_DATA = {
     }
   ],
   usuarios: [
-    { id: 'USR-01', uid_firebase: 'admin-softworker', email: 'admin@softworker.co', rol: 'ADMIN' as const, referencia_id: 'ADM-01', nombre_display: 'Administrador Softworker' },
-    { id: 'USR-02', uid_firebase: 'docente-jamer', email: 'jamer.andrade@ietcaldas.edu.co', rol: 'DOCENTE' as const, referencia_id: 'DOC-01', nombre_display: 'Prof. Jamer Andrade' },
-    { id: 'USR-03', uid_firebase: 'acudiente-maria', email: 'maria.tique@gmail.com', rol: 'ACUDIENTE' as const, referencia_id: 'ACU-01', nombre_display: 'María Elena Tique' },
+    // ROLES: ADMINISTRADOR (Rectoría / Coordinación)
+    { 
+      id: 'USR-ADM-01', 
+      uid_firebase: 'uid-rector', 
+      email: 'rector@ietcaldas.edu.co', 
+      username: 'rector',
+      password: 'admin123',
+      rol: 'ADMIN' as const, 
+      referencia_id: 'ADM-01', 
+      nombre_display: 'Lic. Héctor Fabio - Rector',
+      activo: true
+    },
+    { 
+      id: 'USR-ADM-02', 
+      uid_firebase: 'uid-coordinacion', 
+      email: 'coordinacion@ietcaldas.edu.co', 
+      username: 'coordinadora',
+      password: 'admin123',
+      rol: 'ADMIN' as const, 
+      referencia_id: 'ADM-02', 
+      nombre_display: 'Dra. Martha Patricia - Coordinadora',
+      activo: true
+    },
+    { 
+      id: 'USR-ADM-03', 
+      uid_firebase: 'admin-softworker', 
+      email: 'admin@softworker.co', 
+      username: 'admin',
+      password: 'admin123',
+      rol: 'ADMIN' as const, 
+      referencia_id: 'ADM-00', 
+      nombre_display: 'Administrador General Softworker',
+      activo: true
+    },
+
+    // ROLES: DOCENTES
+    { 
+      id: 'USR-DOC-01', 
+      uid_firebase: 'uid-doc-01', 
+      email: 'jamer.andrade@ietcaldas.edu.co', 
+      username: '1110543201',
+      password: 'docente123',
+      rol: 'DOCENTE' as const, 
+      referencia_id: 'DOC-01', 
+      nombre_display: 'Prof. Jamer Andrade Vargas',
+      activo: true
+    },
+    { 
+      id: 'USR-DOC-05', 
+      uid_firebase: 'uid-doc-05', 
+      email: 'luis.cuellar@ietcaldas.edu.co', 
+      username: '1110543205',
+      password: 'docente123',
+      rol: 'DOCENTE' as const, 
+      referencia_id: 'DOC-05', 
+      nombre_display: 'Prof. Luis Eduardo Cuellar',
+      activo: true
+    },
+    { 
+      id: 'USR-DOC-06', 
+      uid_firebase: 'uid-doc-06', 
+      email: 'john.diaz@ietcaldas.edu.co', 
+      username: '1110543206',
+      password: 'docente123',
+      rol: 'DOCENTE' as const, 
+      referencia_id: 'DOC-06', 
+      nombre_display: 'Prof. John Fredy Díaz',
+      activo: true
+    },
+    { 
+      id: 'USR-DOC-07', 
+      uid_firebase: 'uid-doc-07', 
+      email: 'helvis.gonzalez@ietcaldas.edu.co', 
+      username: '1110543207',
+      password: 'docente123',
+      rol: 'DOCENTE' as const, 
+      referencia_id: 'DOC-07', 
+      nombre_display: 'Prof. Helvis González Cutiva',
+      activo: true
+    },
+    { 
+      id: 'USR-DOC-08', 
+      uid_firebase: 'uid-doc-08', 
+      email: 'larissa.gonzalez@ietcaldas.edu.co', 
+      username: '1110543208',
+      password: 'docente123',
+      rol: 'DOCENTE' as const, 
+      referencia_id: 'DOC-08', 
+      nombre_display: 'Prof. Larissa Alejandra González',
+      activo: true
+    },
+    { 
+      id: 'USR-DOC-10', 
+      uid_firebase: 'uid-doc-10', 
+      email: 'mercy.herrada@ietcaldas.edu.co', 
+      username: '1110543210',
+      password: 'docente123',
+      rol: 'DOCENTE' as const, 
+      referencia_id: 'DOC-10', 
+      nombre_display: 'Prof. Mercy Eloisa Herrada',
+      activo: true
+    },
+    { 
+      id: 'USR-DOC-11', 
+      uid_firebase: 'uid-doc-11', 
+      email: 'deisy.medina@ietcaldas.edu.co', 
+      username: '1110543211',
+      password: 'docente123',
+      rol: 'DOCENTE' as const, 
+      referencia_id: 'DOC-11', 
+      nombre_display: 'Prof. Deisy Yaneth Medina',
+      activo: true
+    },
+    { 
+      id: 'USR-DOC-12', 
+      uid_firebase: 'uid-doc-12', 
+      email: 'jhon.molano@ietcaldas.edu.co', 
+      username: '1110543212',
+      password: 'docente123',
+      rol: 'DOCENTE' as const, 
+      referencia_id: 'DOC-12', 
+      nombre_display: 'Prof. Jhon Jairo Molano',
+      activo: true
+    },
+    { 
+      id: 'USR-DOC-13', 
+      uid_firebase: 'uid-doc-13', 
+      email: 'ruth.oliveros@ietcaldas.edu.co', 
+      username: '1110543213',
+      password: 'docente123',
+      rol: 'DOCENTE' as const, 
+      referencia_id: 'DOC-13', 
+      nombre_display: 'Prof. Ruth Lucena Oliveros',
+      activo: true
+    },
+    { 
+      id: 'USR-DOC-15', 
+      uid_firebase: 'uid-doc-15', 
+      email: 'ivan.perdomo@ietcaldas.edu.co', 
+      username: '1110543215',
+      password: 'docente123',
+      rol: 'DOCENTE' as const, 
+      referencia_id: 'DOC-15', 
+      nombre_display: 'Prof. Ivan Andrés Perdomo',
+      activo: true
+    },
+    { 
+      id: 'USR-DOC-16', 
+      uid_firebase: 'uid-doc-16', 
+      email: 'silenia.rodriguez@ietcaldas.edu.co', 
+      username: '1110543216',
+      password: 'docente123',
+      rol: 'DOCENTE' as const, 
+      referencia_id: 'DOC-16', 
+      nombre_display: 'Prof. Silenia Rodríguez Matoma',
+      activo: true
+    },
+    { 
+      id: 'USR-DOC-17', 
+      uid_firebase: 'uid-doc-17', 
+      email: 'juan.roman@ietcaldas.edu.co', 
+      username: '1110543217',
+      password: 'docente123',
+      rol: 'DOCENTE' as const, 
+      referencia_id: 'DOC-17', 
+      nombre_display: 'Prof. Juan Sebastián Román',
+      activo: true
+    },
+    { 
+      id: 'USR-DOC-18', 
+      uid_firebase: 'uid-doc-18', 
+      email: 'edgar.trilleras@ietcaldas.edu.co', 
+      username: '1110543218',
+      password: 'docente123',
+      rol: 'DOCENTE' as const, 
+      referencia_id: 'DOC-18', 
+      nombre_display: 'Prof. José Edgar Trilleras',
+      activo: true
+    },
+
+    // ROLES: ACUDIENTES
+    { 
+      id: 'USR-ACU-01', 
+      uid_firebase: 'uid-acu-01', 
+      email: 'maria.tique@gmail.com', 
+      username: '28549302',
+      password: 'acudiente123',
+      rol: 'ACUDIENTE' as const, 
+      referencia_id: 'ACU-01', 
+      nombre_display: 'María Elena Tique Capera (Acudiente)',
+      activo: true
+    },
+    { 
+      id: 'USR-ACU-02', 
+      uid_firebase: 'uid-acu-02', 
+      email: 'jose.aroca@hotmail.com', 
+      username: '14289033',
+      password: 'acudiente123',
+      rol: 'ACUDIENTE' as const, 
+      referencia_id: 'ACU-02', 
+      nombre_display: 'José Hilario Aroca Yate (Acudiente)',
+      activo: true
+    },
+    { 
+      id: 'USR-ACU-03', 
+      uid_firebase: 'uid-acu-03', 
+      email: 'esperanza.devia@outlook.com', 
+      username: '65890123',
+      password: 'acudiente123',
+      rol: 'ACUDIENTE' as const, 
+      referencia_id: 'ACU-03', 
+      nombre_display: 'Esperanza Devia Guzman (Acudiente)',
+      activo: true
+    },
+
+    // ROLES: ESTUDIANTES
+    { 
+      id: 'USR-EST-201', 
+      uid_firebase: 'uid-est-201', 
+      email: 'breiner.gonzalez@estudiante.caldas.edu.co', 
+      username: '2026-CALDAS-010',
+      password: '1098234561',
+      rol: 'ESTUDIANTE' as const, 
+      referencia_id: 'EST-201', 
+      nombre_display: 'Breiner Smith González Devia',
+      activo: true
+    },
+    { 
+      id: 'USR-EST-202', 
+      uid_firebase: 'uid-est-202', 
+      email: 'valentina.aroca@estudiante.caldas.edu.co', 
+      username: '2026-CALDAS-011',
+      password: '1098234562',
+      rol: 'ESTUDIANTE' as const, 
+      referencia_id: 'EST-202', 
+      nombre_display: 'Valentina Aroca Tique',
+      activo: true
+    },
+    { 
+      id: 'USR-EST-101', 
+      uid_firebase: 'uid-est-101', 
+      email: 'mateo.devia@estudiante.caldas.edu.co', 
+      username: '2026-CALDAS-001',
+      password: '1110982301',
+      rol: 'ESTUDIANTE' as const, 
+      referencia_id: 'EST-101', 
+      nombre_display: 'Mateo Devia Tique',
+      activo: true
+    },
+    { 
+      id: 'USR-EST-102', 
+      uid_firebase: 'uid-est-102', 
+      email: 'luciana.capera@estudiante.caldas.edu.co', 
+      username: '2026-CALDAS-002',
+      password: '1110982302',
+      rol: 'ESTUDIANTE' as const, 
+      referencia_id: 'EST-102', 
+      nombre_display: 'Luciana Capera Aroca',
+      activo: true
+    }
   ],
   excusas: [
     {
@@ -686,7 +892,7 @@ export const INITIAL_SEED_DATA = {
 };
 
 // LocalStorage Persistent Store Backup for instant client operation
-const STORAGE_KEY = 'SOFTWORKER_CALDAS_DB_V6';
+const STORAGE_KEY = 'SOFTWORKER_CALDAS_DB_V8';
 
 export function getLocalStore() {
   const existing = localStorage.getItem(STORAGE_KEY);

@@ -107,17 +107,20 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
       ins: 'I.E.T. Francisco José de Caldas - Natagaima'
     });
 
-    QRCode.toDataURL(qrPayload, {
+    (QRCode.toDataURL as any)(qrPayload, {
       width: 400,
       margin: 1,
       color: {
-        dark: isHighContrastMode ? '#000000' : '#00F0FF',
-        light: isHighContrastMode ? '#FFFFFF' : '#070b12',
+        dark: '#000000',
+        light: '#FFFFFF',
       },
-      errorCorrectionLevel: 'H'
+      errorCorrectionLevel: 'M',
+      logo: null,
+      image: null,
+      imageSettings: undefined
     })
-      .then(url => setQrDataUrl(url))
-      .catch(err => console.error("Error generating student QR:", err));
+      .then((url: string) => setQrDataUrl(url))
+      .catch((err: unknown) => console.error("Error generating student QR:", err));
   }, [selectedStudent, isHighContrastMode]);
 
   if (!selectedStudent) {

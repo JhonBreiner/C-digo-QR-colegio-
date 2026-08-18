@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
 import { 
   DoorOpen, 
   ShieldCheck, 
@@ -13,6 +14,7 @@ import {
   Phone, 
   FileText, 
   Camera, 
+  CameraOff,
   ScanLine, 
   Printer, 
   Download, 
@@ -70,6 +72,134 @@ export const GatePassModule: React.FC<GatePassModuleProps> = ({
   const [scanStatus, setScanStatus] = useState<'IDLE' | 'AUTHORIZED' | 'UNAUTHORIZED' | 'ALREADY_EXITED'>('IDLE');
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string>('');
+  const gateScannerRef = useRef<Html5Qrcode | null>(null);
+  const isStartingGateCameraRef = useRef<boolean>(false);
+  const isStoppingGateCameraRef = useRef<boolean>(false);
+
+  // Sound generator
+  const playBeep = (freq = 880, type: OscillatorType = 'sine', duration = 0.15) => {
+    try {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch {
+      // ignore
+    }
+  };
+
+  // Stop Gate Camera
+  const stopGateCamera = async () => {
+    if (isStoppingGateCameraRef.current) return;
+    isStoppingGateCameraRef.current = true;
+
+    try {
+      const instance = gateScannerRef.current;
+      if (instance) {
+        try {
+          if (instance.isScanning) {
+            await instance.stop();
+          }
+        } catch {
+          // ignore
+        }
+        try {
+          const container = document.getElementById("gate-pass-reader");
+          if (container) {
+            await instance.clear();
+          }
+        } catch {
+          // ignore
+        }
+        gateScannerRef.current = null;
+      }
+    } finally {
+      setIsCameraActive(false);
+      isStoppingGateCameraRef.current = false;
+    }
+  };
+
+  // Start Gate Camera
+  const startGateCamera = async () => {
+    if (isStartingGateCameraRef.current || isStoppingGateCameraRef.current) return;
+    isStartingGateCameraRef.current = true;
+
+    try {
+      if (gateScannerRef.current) {
+        await stopGateCamera();
+      }
+
+      const container = document.getElementById("gate-pass-reader");
+      if (!container) {
+        isStartingGateCameraRef.current = false;
+        return;
+      }
+
+      const html5QrCode = new Html5Qrcode("gate-pass-reader");
+      gateScannerRef.current = html5QrCode;
+
+      const qrCodeSuccessCallback = (decodedText: string) => {
+        playBeep(1046, 'triangle', 0.2);
+        handleVerifyStudent(decodedText);
+      };
+
+      const config = {
+        fps: 10,
+        qrbox: { width: 220, height: 220 }
+      };
+
+      try {
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          config,
+          qrCodeSuccessCallback,
+          () => {}
+        );
+      } catch {
+        await html5QrCode.start(
+          { facingMode: "user" },
+          config,
+          qrCodeSuccessCallback,
+          () => {}
+        );
+      }
+
+      setIsCameraActive(true);
+    } catch (err) {
+      console.warn("Gate camera start error:", err);
+      setIsCameraActive(false);
+    } finally {
+      isStartingGateCameraRef.current = false;
+    }
+  };
+
+  // Auto-start camera when on PORTERIA tab
+  useEffect(() => {
+    let isMounted = true;
+    if (activeTab === 'PORTERIA') {
+      const timer = setTimeout(() => {
+        if (isMounted) {
+          startGateCamera();
+        }
+      }, 200);
+
+      return () => {
+        isMounted = false;
+        clearTimeout(timer);
+        stopGateCamera();
+      };
+    } else {
+      stopGateCamera();
+    }
+  }, [activeTab]);
 
   // New Pass Form States
   const [selectedStudentId, setSelectedStudentId] = useState<string>(estudiantes[0]?.id || '');
@@ -372,18 +502,57 @@ export const GatePassModule: React.FC<GatePassModuleProps> = ({
                 </div>
               </div>
 
-              {/* Camera Scanner Simulation */}
-              <div className="mt-5 p-4 bg-slate-950 border border-slate-800 rounded-2xl text-center">
-                <div className="w-full h-40 bg-black rounded-xl border border-slate-800 flex flex-col items-center justify-center relative overflow-hidden">
-                  <div className="absolute inset-0 border-2 border-amber-500/30 rounded-xl pointer-events-none animate-pulse"></div>
-                  <Camera className="w-10 h-10 text-slate-600 mb-2" />
-                  <p className="text-xs font-mono text-slate-400">
-                    Visor Óptico de Portería Listo
-                  </p>
-                  <span className="text-[10px] font-mono text-amber-400 mt-1">
-                    Acerca el carné digital o celular del estudiante
+              {/* Live Camera Scanner Viewport */}
+              <div className="mt-5 p-4 bg-slate-950 border border-slate-800 rounded-2xl">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-mono font-bold text-amber-300 flex items-center gap-1.5">
+                    <ScanLine className="w-4 h-4 text-amber-400" />
+                    Escáner Óptico de Carné en Vivo
+                  </span>
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                    isCameraActive ? 'bg-[#00FF66]/10 text-[#00FF66] border-[#00FF66]/30' : 'bg-slate-800 text-slate-400 border-slate-700'
+                  }`}>
+                    {isCameraActive ? 'CÁMARA ACTIVA' : 'CÁMARA INACTIVA'}
                   </span>
                 </div>
+
+                <div className="relative w-full aspect-video min-h-[220px] bg-black rounded-xl border border-amber-500/40 overflow-hidden flex items-center justify-center shadow-[0_0_25px_rgba(245,158,11,0.15)]">
+                  {/* Container for Html5Qrcode */}
+                  <div id="gate-pass-reader" className="w-full h-full"></div>
+
+                  {/* Laser line overlay when scanning */}
+                  {isCameraActive && (
+                    <div className="laser-line"></div>
+                  )}
+
+                  {/* Corner HUD Markers */}
+                  <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-amber-400 pointer-events-none"></div>
+                  <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-amber-400 pointer-events-none"></div>
+                  <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-amber-400 pointer-events-none"></div>
+                  <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-amber-400 pointer-events-none"></div>
+
+                  {/* Camera Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={isCameraActive ? stopGateCamera : startGateCamera}
+                    className={`btn-toggle-camera-overlay ${isCameraActive ? 'btn-camera-on' : 'btn-camera-off'}`}
+                  >
+                    {isCameraActive ? (
+                      <>
+                        <CameraOff className="w-4 h-4" />
+                        <span>Apagar Cámara</span>
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="w-4 h-4" />
+                        <span>Encender Cámara</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <p className="text-[11px] font-mono text-slate-400 text-center mt-2">
+                  Apunta el carné QR del estudiante a la cámara para verificar al instante su autorización de salida.
+                </p>
               </div>
 
             </div>

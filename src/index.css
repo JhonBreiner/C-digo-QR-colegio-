@@ -165,3 +165,91 @@
   background: #00F0FF;
 }
 
+/* Reglas obligatorias para eliminar selector de cámara, dashboard y textos de Html5Qrcode */
+#reader select, 
+#reader button:not(.btn-toggle-camera-overlay),
+#reader img,
+#reader svg,
+#reader a,
+#reader span,
+#reader__camera_selection, 
+#reader__status_span, 
+#reader__dashboard, 
+#reader__dashboard_section, 
+#reader__dashboard_section_csr,
+#reader__dashboard_section_fsr,
+#reader__camera_permission_button,
+#reader__header_message,
+#reader__scan_region img,
+#reader__scan_region svg,
+#qr-reader-container select,
+#qr-reader-container button,
+#qr-reader-container img,
+#qr-reader-container svg,
+#qr-reader-container__camera_selection,
+#qr-reader-container__status_span,
+#qr-reader-container__dashboard,
+#qr-reader-container__dashboard_section,
+#qr-reader-container__dashboard_section_csr {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+#reader, #qr-reader-container, #gate-pass-reader, #pae-qr-reader {
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+    position: relative;
+    overflow: hidden;
+    background-color: #000000 !important;
+    background-image: none !important;
+}
+
+#reader video, #qr-reader-container video, #gate-pass-reader video, #pae-qr-reader video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: 0.75rem;
+    background-color: #000000 !important;
+}
+
+#gate-pass-reader select,
+#gate-pass-reader button:not(.btn-toggle-camera-overlay),
+#gate-pass-reader img,
+#gate-pass-reader svg,
+#gate-pass-reader a,
+#gate-pass-reader span,
+#gate-pass-reader__camera_selection,
+#gate-pass-reader__status_span,
+#gate-pass-reader__dashboard,
+#gate-pass-reader__dashboard_section,
+#gate-pass-reader__dashboard_section_csr,
+#gate-pass-reader__dashboard_section_fsr,
+#gate-pass-reader__camera_permission_button,
+#gate-pass-reader__header_message,
+#gate-pass-reader__scan_region img,
+#gate-pass-reader__scan_region svg,
+#pae-qr-reader select,
+#pae-qr-reader button:not(.btn-toggle-camera-overlay),
+#pae-qr-reader img,
+#pae-qr-reader svg,
+#pae-qr-reader a,
+#pae-qr-reader span,
+#pae-qr-reader__camera_selection,
+#pae-qr-reader__status_span,
+#pae-qr-reader__dashboard,
+#pae-qr-reader__dashboard_section,
+#pae-qr-reader__dashboard_section_csr,
+#pae-qr-reader__dashboard_section_fsr,
+#pae-qr-reader__camera_permission_button,
+#pae-qr-reader__header_message,
+#pae-qr-reader__scan_region img,
+#pae-qr-reader__scan_region svg {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+

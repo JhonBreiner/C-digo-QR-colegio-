@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   ScanLine, 
   Camera, 
+  CameraOff,
+  ArrowRight,
   Volume2, 
   CheckCircle2, 
   AlertCircle, 
@@ -20,7 +22,7 @@ import {
   FileText,
   Image
 } from 'lucide-react';
-import { Html5Qrcode, CameraDevice } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 import type { Estudiante, Asistencia, Grado, Grupo, Asignatura, Docente, EstadoAsistencia } from '../types';
 
 interface QRScannerModuleProps {
@@ -50,10 +52,6 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
   const [scannerError, setScannerError] = useState<string>('');
   const [permissionDenied, setPermissionDenied] = useState<boolean>(false);
   
-  // Available camera devices list
-  const [cameras, setCameras] = useState<CameraDevice[]>([]);
-  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
-  
   // Last scanned student result modal state
   const [lastScanResult, setLastScanResult] = useState<{
     estudiante: Estudiante;
@@ -73,6 +71,24 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const isStartingRef = useRef<boolean>(false);
+  const isStoppingRef = useRef<boolean>(false);
+
+  // Auto-start rear camera upon mounting
+  useEffect(() => {
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        startCamera();
+      }
+    }, 200);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+      stopCamera();
+    };
+  }, []);
 
   // Sound generator using Web Audio API for futuristic beep
   const playBeep = (freq = 880, type: OscillatorType = 'sine', duration = 0.15) => {
@@ -97,49 +113,63 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
     }
   };
 
-  // Fetch camera devices on mount
-  useEffect(() => {
-    Html5Qrcode.getCameras()
-      .then((devices) => {
-        if (devices && devices.length > 0) {
-          setCameras(devices);
-          setSelectedCameraId(devices[0].id);
-        }
-      })
-      .catch((err) => {
-        console.warn("No camera devices enumerated or permission pending:", err);
-      });
-  }, []);
-
-  // Stop camera helper
+  // Stop camera helper with safe state guard
   const stopCamera = async () => {
-    if (scannerRef.current) {
-      try {
-        if (scannerRef.current.isScanning) {
-          await scannerRef.current.stop();
-        }
-        scannerRef.current.clear();
-      } catch (e) {
-        console.error("Camera stop error:", e);
-      }
-      scannerRef.current = null;
-    }
-    setIsScanning(false);
-  };
-
-  // Start Camera QR Reader with fallbacks and permission detection
-  const startCamera = async () => {
-    setScannerError('');
-    setPermissionDenied(false);
-    
-    // Stop previous instance if active
-    await stopCamera();
+    if (isStoppingRef.current) return;
+    isStoppingRef.current = true;
 
     try {
-      const html5QrCode = new Html5Qrcode("qr-reader-container");
-      scannerRef.current = html5QrCode;
+      const instance = scannerRef.current;
+      if (instance) {
+        try {
+          if (instance.isScanning) {
+            await instance.stop();
+          }
+        } catch {
+          // Ignore intermediate transition errors on stop
+        }
+        
+        try {
+          // Clear only if DOM element still exists
+          const container = document.getElementById("reader");
+          if (container) {
+            await instance.clear();
+          }
+        } catch {
+          // Ignore clear errors
+        }
+        scannerRef.current = null;
+      }
+    } finally {
+      setIsScanning(false);
+      isStoppingRef.current = false;
+    }
+  };
 
-      setIsScanning(true);
+  // Start Camera QR Reader directly using Html5Qrcode with container ID 'reader' and rear camera
+  const startCamera = async () => {
+    if (isStartingRef.current || isStoppingRef.current) return;
+    isStartingRef.current = true;
+
+    setScannerError('');
+    setPermissionDenied(false);
+
+    try {
+      // Stop previous instance if active
+      if (scannerRef.current) {
+        await stopCamera();
+      }
+
+      // Check if container element exists in DOM
+      const readerElem = document.getElementById("reader");
+      if (!readerElem) {
+        isStartingRef.current = false;
+        return;
+      }
+
+      // Initialize exclusively with the container ID 'reader'
+      const html5QrCode = new Html5Qrcode("reader");
+      scannerRef.current = html5QrCode;
 
       const qrCodeSuccessCallback = async (decodedText: string) => {
         playBeep(1046, 'triangle', 0.2);
@@ -148,49 +178,30 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
 
       const config = {
         fps: 10,
-        qrbox: { width: 260, height: 260 }
+        qrbox: { width: 250, height: 250 }
       };
 
-      // 1st Attempt: Selected Camera ID or environment camera
-      if (selectedCameraId) {
+      // Transparently start rear camera ({ facingMode: "environment" })
+      try {
         await html5QrCode.start(
-          selectedCameraId,
+          { facingMode: "environment" },
           config,
           qrCodeSuccessCallback,
           () => {}
         );
-      } else {
-        try {
-          await html5QrCode.start(
-            { facingMode: "environment" },
-            config,
-            qrCodeSuccessCallback,
-            () => {}
-          );
-        } catch (envErr) {
-          console.warn("FacingMode environment failed, trying user facing camera:", envErr);
-          await html5QrCode.start(
-            { facingMode: "user" },
-            config,
-            qrCodeSuccessCallback,
-            () => {}
-          );
-        }
+      } catch {
+        // Fallback to user facing camera
+        await html5QrCode.start(
+          { facingMode: "user" },
+          config,
+          qrCodeSuccessCallback,
+          () => {}
+        );
       }
 
-      // Re-fetch cameras after permission granted
-      try {
-        const devices = await Html5Qrcode.getCameras();
-        if (devices && devices.length > 0) {
-          setCameras(devices);
-          if (!selectedCameraId) setSelectedCameraId(devices[0].id);
-        }
-      } catch {
-        // ignore
-      }
+      setIsScanning(true);
 
     } catch (err: unknown) {
-      console.error("Camera start error:", err);
       setIsScanning(false);
 
       const errorMsg = err instanceof Error ? err.message : String(err);
@@ -208,14 +219,10 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
       } else {
         setScannerError(`No se pudo iniciar la cámara: ${errorMsg}`);
       }
+    } finally {
+      isStartingRef.current = false;
     }
   };
-
-  useEffect(() => {
-    return () => {
-      stopCamera().catch(() => {});
-    };
-  }, []);
 
   // File Upload QR Code Scanner
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -226,7 +233,7 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
     setIsFileScanning(true);
 
     try {
-      const html5QrCode = new Html5Qrcode("qr-file-temp-container");
+      const html5QrCode = new Html5Qrcode("reader");
       const decodedText = await html5QrCode.scanFile(file, true);
       playBeep(1046, 'triangle', 0.2);
       await handleScannedCode(decodedText);
@@ -342,68 +349,20 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
           <div>
             <h2 className="font-orbitron text-base font-bold text-[#00F0FF] flex items-center gap-2">
               <Zap className="w-5 h-5 text-[#00FF66] animate-pulse" />
-              Control de Asistencia por Cámara
+              Control de Asistencia en Aulas de Clase (Escáner QR)
             </h2>
             <p className="text-xs text-slate-400 font-mono">
-              Institución Educativa Técnica Francisco José de Caldas - Natagaima
+              I.E.T. Francisco José de Caldas — Registro en tiempo real por asignatura y grado en aula
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center space-x-2 gap-y-2">
-            {cameras.length > 1 && !isScanning && (
-              <select
-                value={selectedCameraId}
-                onChange={(e) => setSelectedCameraId(e.target.value)}
-                className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none"
-              >
-                {cameras.map((cam, idx) => (
-                  <option key={cam.id} value={cam.id}>
-                    Cámara {idx + 1}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            {!isScanning ? (
-              <button
-                onClick={startCamera}
-                className="neon-btn-green px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 shadow-lg"
-              >
-                <Camera className="w-4 h-4" />
-                Iniciar Cámara
-              </button>
-            ) : (
-              <button
-                onClick={stopCamera}
-                className="bg-rose-500/20 text-rose-400 border border-rose-500/50 hover:bg-rose-500/30 px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2"
-              >
-                <X className="w-4 h-4" />
-                Detener Escáner
-              </button>
-            )}
-
-            {/* Hidden File Input for QR Image Scan */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept="image/*"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isFileScanning}
-              className="neon-btn-purple px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2"
-            >
-              <Upload className="w-4 h-4" />
-              {isFileScanning ? 'Procesando...' : 'Escanear Imagen QR'}
-            </button>
+          <div className="flex items-center space-x-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold bg-[#00FF66]/10 text-[#00FF66] border border-[#00FF66]/30">
+              <span className="w-2 h-2 rounded-full bg-[#00FF66] animate-pulse"></span>
+              Escáner de Aula Activo
+            </span>
           </div>
         </div>
-
-        {/* Hidden temp element for file QR scanner */}
-        <div id="qr-file-temp-container" className="hidden"></div>
 
         {/* Selectors for Session Context */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -467,8 +426,8 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
           {/* Scanner Box viewport with Laser Line overlay */}
           <div className="relative w-full aspect-square max-w-md mx-auto bg-slate-950 rounded-2xl border-2 border-[#00F0FF]/40 overflow-hidden flex items-center justify-center shadow-[0_0_30px_rgba(0,240,255,0.15)]">
             
-            {/* HTML5 QR Code Container */}
-            <div id="qr-reader-container" className="w-full h-full"></div>
+            {/* HTML5 QR Code Container initialized strictly with ID 'reader' */}
+            <div id="reader" className="w-full h-full"></div>
 
             {/* Cyberpunk Laser Line Effect */}
             {isScanning && (
@@ -476,16 +435,29 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
             )}
 
             {/* Corner HUD Markers */}
-            <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-[#00F0FF]"></div>
-            <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-[#00F0FF]"></div>
-            <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-[#00F0FF]"></div>
-            <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-[#00F0FF]"></div>
+            <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-[#00F0FF] pointer-events-none"></div>
+            <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-[#00F0FF] pointer-events-none"></div>
+            <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-[#00F0FF] pointer-events-none"></div>
+            <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-[#00F0FF] pointer-events-none"></div>
 
-            {!isScanning && (
-              <div className="text-center p-6 space-y-3 z-10 pointer-events-none opacity-40">
-                <Camera className="w-12 h-12 text-slate-800 mx-auto" />
-              </div>
-            )}
+            {/* Botón de Control de Cámara Sobre el Visor ("Encender / Apagar Cámara") */}
+            <button
+              type="button"
+              onClick={isScanning ? stopCamera : startCamera}
+              className={`btn-toggle-camera-overlay ${isScanning ? 'btn-camera-on' : 'btn-camera-off'}`}
+            >
+              {isScanning ? (
+                <>
+                  <CameraOff className="w-4 h-4" />
+                  <span>Apagar Cámara</span>
+                </>
+              ) : (
+                <>
+                  <Camera className="w-4 h-4" />
+                  <span>Encender Cámara</span>
+                </>
+              )}
+            </button>
           </div>
 
           {scannerError && (
@@ -700,63 +672,94 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
 
       </div>
 
-      {/* Floating HUD Modal Alert on Scan Confirmation */}
+      {/* Floating HUD Modal / Carnet Estudiantil on Scan Confirmation */}
       {lastScanResult && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="glass-panel p-6 rounded-3xl border-2 border-[#00FF66] max-w-md w-full space-y-5 shadow-[0_0_50px_rgba(0,255,102,0.3)] relative">
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="carnet-card-container border-2 border-[#00F0FF]/50 relative shadow-[0_0_50px_rgba(0,240,255,0.25)]">
             
             <button
               onClick={() => setLastScanResult(null)}
-              className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-white bg-slate-900 rounded-full"
+              className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-white bg-slate-900/90 rounded-full border border-slate-700"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 bg-[#00FF66]/20 border border-[#00FF66] rounded-full flex items-center justify-center mx-auto text-[#00FF66] shadow-[0_0_20px_#00FF66]">
-                <CheckCircle2 className="w-10 h-10 animate-bounce" />
+            {/* Encabezado Institucional con Escudo */}
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800 pr-8">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-slate-900 border border-[#00F0FF]/40 p-1 flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+                  <img 
+                    src="https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=150&auto=format&fit=crop&q=80" 
+                    alt="Escudo Institución" 
+                    class="w-full h-full object-contain rounded-lg"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-xs font-orbitron font-bold text-[#00F0FF] tracking-wider leading-tight">
+                    I.E.T. FRANCISCO JOSÉ DE CALDAS
+                  </h2>
+                  <p className="text-[10px] font-mono text-slate-400">Natagaima • Tolima | Carnet Digital</p>
+                </div>
               </div>
-              <h3 className="font-orbitron text-lg font-black text-white tracking-wider uppercase">
-                ¡ASISTENCIA REGISTRADA!
-              </h3>
-              <p className="text-xs font-mono text-[#00FF66] font-bold">
-                I.E.T. Francisco José de Caldas - Natagaima
-              </p>
+
+              {/* Insignia / Badge de Estado */}
+              <div className={`badge-estado ${lastScanResult.asistencia.estado === 'TARDE' ? 'badge-retardo' : 'badge-a-tiempo'}`}>
+                <span className={`w-2 h-2 rounded-full ${
+                  lastScanResult.asistencia.estado === 'TARDE' ? 'bg-amber-400 animate-ping' : 'bg-[#00FF66] animate-pulse'
+                }`}></span>
+                <span>{lastScanResult.asistencia.estado === 'TARDE' ? 'LLEGÓ TARDE' : 'A TIEMPO'}</span>
+              </div>
             </div>
 
-            <div className="p-4 bg-slate-900/90 border border-slate-800 rounded-2xl flex items-center gap-4">
-              <img 
-                src={lastScanResult.estudiante.foto_url || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150"} 
-                alt="Student" 
-                className="w-16 h-16 rounded-xl object-cover border-2 border-[#00F0FF]"
-              />
-              <div className="space-y-1 font-mono text-xs">
-                <h4 className="font-bold text-slate-100 text-sm">{lastScanResult.estudiante.nombres} {lastScanResult.estudiante.apellidos}</h4>
-                <p className="text-[#00F0FF]">CÓDIGO: {lastScanResult.estudiante.codigo_estudiantil}</p>
-                <p className="text-slate-400 text-[10px]">DOC: {lastScanResult.estudiante.numero_doc}</p>
+            {/* Foto y Datos del Estudiante */}
+            <div className="flex gap-4 items-center mb-4 bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800">
+              <div className="relative w-20 h-24 rounded-xl overflow-hidden border-2 border-[#00F0FF]/60 flex-shrink-0 shadow-md">
+                <img 
+                  src={lastScanResult.estudiante.foto_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80"} 
+                  alt="Foto Estudiante" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              <div className="space-y-1 overflow-hidden">
+                <span className="text-[10px] font-mono font-bold text-[#00FF66] bg-[#00FF66]/10 px-2 py-0.5 rounded border border-[#00FF66]/30">
+                  {lastScanResult.estudiante.codigo_estudiantil}
+                </span>
+                <h3 className="text-sm font-bold text-slate-100 truncate mt-1">
+                  {lastScanResult.estudiante.nombres} {lastScanResult.estudiante.apellidos}
+                </h3>
+                <p className="text-xs font-mono text-[#00F0FF]">
+                  {grados.find(g => g.id === lastScanResult.estudiante.grado_id)?.nombre_grado || '11°'} • Grupo {grupos.find(gp => gp.id === lastScanResult.estudiante.grupo_id)?.nombre_grupo || '11-1'}
+                </p>
+                <p className="text-[11px] text-slate-400 font-sans">
+                  EPS: Asmet Salud | RH: {lastScanResult.estudiante.rh || 'O+'}
+                </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 font-mono text-xs">
-              <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-xl">
-                <span className="text-slate-400 text-[10px] block">Hora de Entrada:</span>
-                <span className="text-slate-100 font-bold text-sm">{lastScanResult.timestamp}</span>
+            {/* Hora Exacta de Marcación y Estado */}
+            <div className="grid grid-cols-2 gap-2.5 mb-5 text-center">
+              <div className="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">
+                <span className="text-[10px] font-mono text-slate-400 block uppercase">Hora de Marcación</span>
+                <span className="text-sm font-mono font-bold text-amber-300">
+                  {lastScanResult.timestamp}
+                </span>
               </div>
-              <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-xl">
-                <span className="text-slate-400 text-[10px] block">Estado:</span>
-                <span className={`font-bold text-sm ${
-                  lastScanResult.asistencia.estado === 'PRESENTE' ? 'text-[#00FF66]' : 'text-amber-400'
-                }`}>
-                  {lastScanResult.asistencia.estado}
+              <div className="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">
+                <span className="text-[10px] font-mono text-slate-400 block uppercase">Control de Ingreso</span>
+                <span className="text-sm font-mono font-bold text-emerald-400">
+                  REGISTRADO
                 </span>
               </div>
             </div>
 
+            {/* Botón para Escanear Siguiente */}
             <button
               onClick={() => setLastScanResult(null)}
-              className="w-full neon-btn-cyan py-3 rounded-xl font-mono text-xs font-bold uppercase tracking-wider"
+              className="btn-next-scan w-full"
             >
-              Aceptar / Continuar Escaneando
+              <ArrowRight className="w-4 h-4" />
+              <span>Escanear Siguiente</span>
             </button>
           </div>
         </div>
@@ -765,3 +768,4 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
     </div>
   );
 };
+

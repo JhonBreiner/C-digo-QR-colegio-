@@ -5,15 +5,107 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Softworker | Control de Asistencia QR - I.E.T. Francisco José de Caldas</title>
     <meta name="description" content="Sistema Cyber-SaaS de Gestión Estudiantil, Carnetización QR y Control de Asistencia para I.E.T. Francisco José de Caldas Natagaima" />
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Estilos Cyber-SaaS y Reglas de Escáner -->
+    <link rel="stylesheet" href="/styles.css">
   </head>
   <body class="bg-[#090D16] text-slate-100 font-sans antialiased selection:bg-[#00F0FF]/30 selection:text-[#00F0FF] min-h-screen">
+    
+    <!-- Contenedor Principal de la Aplicación React -->
     <div id="root"></div>
+
+    <!-- ====================================================================
+         MODAL / TARJETA DEL CARNET ESTUDIANTIL AL ESCANEAR (Despliegue UI)
+         ==================================================================== -->
+    <div id="carnetModal" class="carnet-modal-backdrop">
+      <div class="carnet-card-container">
+        
+        <!-- Encabezado Institucional con Escudo -->
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-slate-900 border border-[#00F0FF]/40 p-1 flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+              <img 
+                src="https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=150&auto=format&fit=crop&q=80" 
+                alt="Escudo Institución" 
+                class="w-full h-full object-contain rounded-lg"
+              />
+            </div>
+            <div>
+              <h2 class="text-xs font-orbitron font-bold text-[#00F0FF] tracking-wider leading-tight">
+                I.E.T. FRANCISCO JOSÉ DE CALDAS
+              </h2>
+              <p class="text-[10px] font-mono text-slate-400">Natagaima • Tolima | Carnet Digital</p>
+            </div>
+          </div>
+
+          <!-- Badge Dinámico de Estado (A Tiempo / Llegó Tarde) -->
+          <div id="carnetEstadoBadge" class="badge-estado badge-a-tiempo">
+            <span class="w-2 h-2 rounded-full bg-[#00FF66] animate-pulse"></span>
+            <span>A TIEMPO</span>
+          </div>
+        </div>
+
+        <!-- Cuerpo del Carnet: Foto y Datos del Estudiante -->
+        <div class="flex gap-4 items-center mb-4 bg-slate-950/60 p-3 rounded-2xl border border-slate-800/80">
+          <div class="relative w-20 h-24 rounded-xl overflow-hidden border-2 border-[#00F0FF]/60 flex-shrink-0 shadow-md">
+            <img 
+              id="carnetFoto" 
+              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80" 
+              alt="Foto Estudiante" 
+              class="w-full h-full object-cover"
+            />
+          </div>
+
+          <div class="space-y-1 overflow-hidden">
+            <span id="carnetCodigo" class="text-[10px] font-mono font-bold text-[#00FF66] bg-[#00FF66]/10 px-2 py-0.5 rounded border border-[#00FF66]/30">
+              2026-CALDAS-001
+            </span>
+            <h3 id="carnetNombre" class="text-sm font-bold text-slate-100 truncate mt-1">
+              Santiago Tique Capera
+            </h3>
+            <p id="carnetGradoGrupo" class="text-xs font-mono text-[#00F0FF]">
+              11° Grado • Grupo 11-1
+            </p>
+            <p id="carnetEpsRh" class="text-[11px] text-slate-400 font-sans">
+              EPS: Asmet Salud | RH: O+
+            </p>
+          </div>
+        </div>
+
+        <!-- Información de Registro: Hora Exacta de Marcación -->
+        <div class="grid grid-cols-2 gap-2 mb-5 text-center">
+          <div class="bg-slate-900/90 border border-slate-800 p-2 rounded-xl">
+            <span class="text-[10px] font-mono text-slate-400 block uppercase">Hora de Marcación</span>
+            <span id="carnetHora" class="text-sm font-mono font-bold text-amber-300">
+              07:15:23 AM
+            </span>
+          </div>
+          <div class="bg-slate-900/90 border border-slate-800 p-2 rounded-xl">
+            <span class="text-[10px] font-mono text-slate-400 block uppercase">Control de Ingreso</span>
+            <span class="text-sm font-mono font-bold text-emerald-400">
+              REGISTRADO
+            </span>
+          </div>
+        </div>
+
+        <!-- Botón para Escanear Siguiente -->
+        <button id="btnEscanearSiguiente" class="btn-next-scan">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+          </svg>
+          <span>Escanear Siguiente</span>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Scripts de la Aplicación -->
     <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/app.js"></script>
   </body>
 </html>
-
-

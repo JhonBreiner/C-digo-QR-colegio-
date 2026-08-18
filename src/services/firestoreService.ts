@@ -78,6 +78,129 @@ export async function deleteDocument(colName: string, id: string): Promise<void>
   await deleteDoc(docRef);
 }
 
+// Autenticación Ultra Rápida y Validación de Credenciales en Firestore
+export async function validarCredencialesFirestore(
+  identificador: string,
+  passwordIngresada: string,
+  rolRequerido: string,
+  tipoDoc?: 'TI' | 'CC'
+): Promise<{
+  success: boolean;
+  usuario?: Usuario;
+  mensaje: string;
+}> {
+  const cleanId = identificador.trim().toLowerCase();
+  const cleanPass = passwordIngresada.trim();
+
+  if (!cleanId || !cleanPass) {
+    return {
+      success: false,
+      mensaje: 'Por favor ingresa tu identificación y contraseña.'
+    };
+  }
+
+  // 1. Verificación instantánea en memoria / LocalStore para velocidad cero latencia
+  try {
+    const { getLocalStore } = await import('../firebase/config');
+    const localStore = getLocalStore();
+    const listaUsuarios: Usuario[] = localStore.usuarios || [];
+
+    const usuarioEncontrado = listaUsuarios.find(u => {
+      const matchId = (u.email && u.email.toLowerCase() === cleanId) ||
+                      (u.username && u.username.toLowerCase() === cleanId) ||
+                      (u.id && u.id.toLowerCase() === cleanId) ||
+                      (u.referencia_id && u.referencia_id.toLowerCase() === cleanId);
+      return matchId;
+    });
+
+    if (usuarioEncontrado) {
+      if (rolRequerido && usuarioEncontrado.rol !== rolRequerido) {
+        return {
+          success: false,
+          mensaje: `El usuario pertenece al rol ${usuarioEncontrado.rol}, no al portal de ${rolRequerido}.`
+        };
+      }
+
+      if (usuarioEncontrado.password && usuarioEncontrado.password !== cleanPass) {
+        return {
+          success: false,
+          mensaje: 'Contraseña incorrecta. Por favor intenta nuevamente.'
+        };
+      }
+
+      return {
+        success: true,
+        usuario: usuarioEncontrado,
+        mensaje: '¡Acceso validado exitosamente!'
+      };
+    }
+  } catch (localError) {
+    console.warn('Verificación en local store omitida:', localError);
+  }
+
+  // 2. Consulta a Firestore con Timeout Ultrarrápido (max 1.5s para no bloquear la UI)
+  try {
+    const usuariosRef = collection(db, 'usuarios');
+    
+    // Consulta con límite de tiempo
+    const fetchFirestorePromise = async () => {
+      // Buscar por username (CC / TI / Código)
+      const qUser = query(usuariosRef, where('username', '==', cleanId));
+      let snap = await getDocs(qUser);
+
+      // Si no se encuentra por username, buscar por email
+      if (snap.empty) {
+        const qEmail = query(usuariosRef, where('email', '==', cleanId));
+        snap = await getDocs(qEmail);
+      }
+
+      if (!snap.empty) {
+        const userDoc = snap.docs[0].data() as Usuario;
+        const userDocId = snap.docs[0].id;
+        const usuarioCompleto: Usuario = { ...userDoc, id: userDocId };
+
+        if (rolRequerido && usuarioCompleto.rol !== rolRequerido) {
+          return {
+            success: false,
+            mensaje: `El usuario pertenece al rol ${usuarioCompleto.rol}, no a ${rolRequerido}.`
+          };
+        }
+
+        if (usuarioCompleto.password && usuarioCompleto.password !== cleanPass) {
+          return {
+            success: false,
+            mensaje: 'Contraseña incorrecta.'
+          };
+        }
+
+        return {
+          success: true,
+          usuario: usuarioCompleto,
+          mensaje: '¡Autenticación exitosa en Firestore!'
+        };
+      }
+
+      return null;
+    };
+
+    const timeoutPromise = new Promise<{ success: boolean; mensaje: string }>((resolve) =>
+      setTimeout(() => resolve({ success: false, mensaje: 'Tiempo de espera agotado' }), 1500)
+    );
+
+    const raceResult = await Promise.race([fetchFirestorePromise(), timeoutPromise]);
+    if (raceResult && 'usuario' in raceResult && raceResult.usuario) {
+      return raceResult as { success: boolean; usuario: Usuario; mensaje: string };
+    }
+  } catch (firestoreError) {
+    console.warn('Firestore fallback offline:', firestoreError);
+  }
+
+  return {
+    success: false,
+    mensaje: `No se encontró ningún usuario con el documento o código "${identificador}".`
+  };
+}
+
 // Escáner y Control de Asistencia Específico
 export async function registrarAsistenciaQR(
   codigoEstudiantilOrDoc: string,

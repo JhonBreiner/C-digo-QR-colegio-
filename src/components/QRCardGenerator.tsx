@@ -13,7 +13,9 @@ import {
   User,
   CreditCard,
   Layers,
-  FileText
+  FileText,
+  Eye,
+  Box
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import jsPDF from 'jspdf';
@@ -44,6 +46,7 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [cardSide, setCardSide] = useState<'FRONT' | 'BACK'>('FRONT');
+  const [is3DMode, setIs3DMode] = useState<boolean>(true);
 
   // Filter students
   const filteredStudents = estudiantes.filter(e => {
@@ -77,16 +80,21 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
       id: selectedStudent.id
     });
 
-    QRCode.toDataURL(qrPayload, {
+    (QRCode.toDataURL as any)(qrPayload, {
       width: 400,
       margin: 1,
       color: {
         dark: '#000000',  // High contrast pure black modules
         light: '#FFFFFF' // High contrast pure white background
-      }
+      },
+      errorCorrectionLevel: 'M',
+      // Eliminación total del ícono/logo
+      logo: null,
+      image: null,
+      imageSettings: undefined
     })
-    .then(url => setQrDataUrl(url))
-    .catch(err => console.error("Error generating QR:", err));
+    .then((url: string) => setQrDataUrl(url))
+    .catch((err: unknown) => console.error("Error generating QR:", err));
   }, [selectedStudent]);
 
   // Download High-Contrast QR Code PNG
@@ -392,13 +400,28 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
         {/* Right Column: High-Tech CR80 ID Card Display */}
         <div className="lg:col-span-7 glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
           
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 gap-3">
             <h3 className="font-orbitron text-sm font-bold text-slate-200 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#00F0FF]" />
               Carné Estudiantil Oficial (CR80)
             </h3>
 
             <div className="flex items-center space-x-2 font-mono text-xs">
+              {/* 3D Mode Toggle Button */}
+              <button
+                type="button"
+                onClick={() => setIs3DMode(!is3DMode)}
+                className={`px-3 py-1 rounded-lg border transition-all flex items-center gap-1.5 ${
+                  is3DMode 
+                    ? 'bg-gradient-to-r from-[#00F0FF]/20 to-[#7000FF]/20 border-[#00F0FF] text-[#00F0FF] font-bold shadow-[0_0_15px_rgba(0,240,255,0.25)]' 
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+                title="Activar vista 3D con efecto hover interactivo y brillo Glassmorphic"
+              >
+                <Box className="w-3.5 h-3.5 text-[#00F0FF]" />
+                <span>Modo 3D {is3DMode ? 'ON' : 'OFF'}</span>
+              </button>
+
               <button
                 onClick={() => setCardSide('FRONT')}
                 className={`px-3 py-1 rounded-lg border transition-all ${
@@ -422,20 +445,27 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
             </div>
           </div>
 
-          {/* Interactive Card Canvas Preview Container */}
-          <div className="w-full flex justify-center py-4">
+          {/* Interactive Card Canvas Preview Container with 3D Perspective */}
+          <div className={`w-full flex justify-center py-4 ${is3DMode ? 'card-3d-perspective-container' : ''}`}>
             
             {cardSide === 'FRONT' ? (
               /* FRONT CARD VIEW */
-              <div className="w-full max-w-md aspect-[1.586/1] bg-[#0b0f19] border-2 border-[#00F0FF]/60 rounded-2xl p-5 shadow-[0_0_40px_rgba(0,240,255,0.25)] relative overflow-hidden flex flex-col justify-between font-mono">
+              <div className={`w-full max-w-md aspect-[1.586/1] bg-[#0b0f19] border-2 border-[#00F0FF]/60 rounded-2xl p-5 shadow-[0_0_40px_rgba(0,240,255,0.25)] relative overflow-hidden flex flex-col justify-between font-mono ${
+                is3DMode ? 'card-3d-interactive cursor-pointer group' : ''
+              }`}>
                 
+                {/* 3D Glassmorphism Glare Effect on Hover */}
+                {is3DMode && (
+                  <div className="card-3d-glare-effect opacity-0 group-hover:opacity-100"></div>
+                )}
+
                 {/* Holographic background overlay */}
                 <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-[#00F0FF]/15 via-[#7000FF]/10 to-transparent rounded-full blur-2xl pointer-events-none"></div>
 
                 {/* Card Header with Official School Crest */}
-                <div className="border-b border-slate-800/80 pb-2 flex items-center justify-between">
+                <div className="border-b border-slate-800/80 pb-2 flex items-center justify-between relative z-10">
                   <div className="flex items-center space-x-2.5">
-                    <div className="shrink-0 p-1 bg-white/10 border border-[#00F0FF]/40 rounded-lg">
+                    <div className="shrink-0 p-1 bg-white/10 border border-[#00F0FF]/40 rounded-lg shadow-sm">
                       <SchoolCrest size={32} showGlow={false} />
                     </div>
                     <div>
@@ -447,10 +477,16 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
                       </p>
                     </div>
                   </div>
+
+                  {is3DMode && (
+                    <span className="text-[9px] font-mono text-[#00F0FF] bg-[#00F0FF]/10 border border-[#00F0FF]/30 px-2 py-0.5 rounded-full font-bold">
+                      3D SMART ID
+                    </span>
+                  )}
                 </div>
 
                 {/* Card Body: Photo, Details & High Contrast QR */}
-                <div className="grid grid-cols-12 gap-3 items-center py-2">
+                <div className="grid grid-cols-12 gap-3 items-center py-2 relative z-10">
                   <div className="col-span-8 space-y-1.5">
                     <div>
                       <span className="text-[9px] text-slate-400 block uppercase">Estudiante:</span>
@@ -500,7 +536,7 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
                 </div>
 
                 {/* Card Footer */}
-                <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[8px] text-slate-400">
+                <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[8px] text-slate-400 relative z-10">
                   <span>SOFTWORKER CYBER-SAAS 2026</span>
                   <span className="text-[#00FF66] font-bold">VÁLIDO AÑO LECTIVO 2026</span>
                 </div>
@@ -508,16 +544,23 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
               </div>
             ) : (
               /* BACK CARD VIEW */
-              <div className="w-full max-w-md aspect-[1.586/1] bg-[#0b0f19] border-2 border-[#7000FF]/60 rounded-2xl p-5 shadow-[0_0_40px_rgba(112,0,255,0.25)] relative overflow-hidden flex flex-col justify-between font-mono text-xs">
+              <div className={`w-full max-w-md aspect-[1.586/1] bg-[#0b0f19] border-2 border-[#7000FF]/60 rounded-2xl p-5 shadow-[0_0_40px_rgba(112,0,255,0.25)] relative overflow-hidden flex flex-col justify-between font-mono text-xs ${
+                is3DMode ? 'card-3d-interactive cursor-pointer group' : ''
+              }`}>
                 
-                <div className="border-b border-slate-800 pb-2">
+                {/* 3D Glassmorphism Glare Effect on Hover */}
+                {is3DMode && (
+                  <div className="card-3d-glare-effect opacity-0 group-hover:opacity-100"></div>
+                )}
+
+                <div className="border-b border-slate-800 pb-2 relative z-10">
                   <h4 className="font-orbitron text-xs font-bold text-[#c084fc]">
                     INFORMACIÓN INSTITUCIONAL Y EMERGENCIA
                   </h4>
                   <p className="text-[9px] text-slate-400">I.E.T. Francisco José de Caldas - Natagaima, Tolima</p>
                 </div>
 
-                <div className="space-y-2 text-[10px] text-slate-300">
+                <div className="space-y-2 text-[10px] text-slate-300 relative z-10">
                   <div className="flex items-center gap-2">
                     <HeartPulse className="w-4 h-4 text-rose-400 shrink-0" />
                     <span>EPS Afiliada: <strong className="text-white">{epsObj?.nombre_eps || 'Asmet Salud'}</strong></span>
@@ -531,7 +574,7 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-slate-800 text-[8px] text-slate-500 text-center">
+                <div className="pt-2 border-t border-slate-800 text-[8px] text-slate-500 text-center relative z-10">
                   Este carné es intransferible. En caso de pérdida informar inmediatamente a la Coordinación Académica.
                 </div>
 

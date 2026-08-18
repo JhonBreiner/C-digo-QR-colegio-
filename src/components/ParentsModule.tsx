@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   Search, 
@@ -16,8 +16,20 @@ import {
   Sparkles,
   X,
   Check,
-  UserCheck
+  UserCheck,
+  Bell,
+  BellRing,
+  MessageSquare,
+  Volume2,
+  ShieldCheck
 } from 'lucide-react';
+import {
+  getNotificationPermission,
+  requestNotificationPermission,
+  despacharAlertaAsistencia,
+  generarEnlaceWhatsApp,
+  buildMensajeAlerta
+} from '../services/notificationService';
 import type { Estudiante, Asistencia, Excusa, Grado, Grupo, EPS, Acudiente, UserRole } from '../types';
 
 interface ParentsModuleProps {
@@ -55,6 +67,40 @@ export const ParentsModule: React.FC<ParentsModuleProps> = ({
   const [fechaFin, setFechaFin] = useState<string>(new Date().toISOString().split('T')[0]);
   const [motivo, setMotivo] = useState<string>('');
   const [archivoNombre, setArchivoNombre] = useState<string>('');
+  const [permissionStatus, setPermissionStatus] = useState<NotificationPermission | 'unsupported'>('default');
+  const [isSendingAlert, setIsSendingAlert] = useState<boolean>(false);
+
+  useEffect(() => {
+    setPermissionStatus(getNotificationPermission());
+  }, []);
+
+  const handleRequestPush = async () => {
+    const res = await requestNotificationPermission();
+    setPermissionStatus(res);
+  };
+
+  const handleSendTestLateAlert = async (isAbsence: boolean = false) => {
+    if (!selectedStudent) return;
+    setIsSendingAlert(true);
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const dateStr = now.toISOString().split('T')[0];
+
+    await despacharAlertaAsistencia({
+      estudiante: selectedStudent,
+      acudiente: acudienteObj,
+      tipo: isAbsence ? 'INASISTENCIA' : 'TARDANZA',
+      fecha: dateStr,
+      hora: timeStr,
+      materia: isAbsence ? 'Matemáticas' : 'Lengua Castellana',
+      docenteNombre: 'Profesor Titular Caldas',
+      gradoNombre: gradoObj?.nombre_grado,
+      grupoNombre: grupoObj?.nombre_grupo
+    });
+
+    setIsSendingAlert(false);
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,6 +245,75 @@ export const ParentsModule: React.FC<ParentsModuleProps> = ({
               <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl">
                 <span className="text-[10px] text-amber-400 uppercase font-bold block mb-1">Observación Médica:</span>
                 <p className="text-[11px] text-slate-300 italic">{selectedStudent.observacion_medica || 'Sin novedad médica'}</p>
+              </div>
+            </div>
+
+            {/* Live Web Push & WhatsApp Alert HUD for Parents */}
+            <div className="p-4 bg-gradient-to-b from-cyan-950/40 to-slate-900/90 border border-cyan-500/30 rounded-2xl space-y-3 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BellRing className="w-4 h-4 text-cyan-400 animate-pulse" />
+                  <span className="font-orbitron font-bold text-xs text-slate-100">
+                    Alertas Push en Vivo
+                  </span>
+                </div>
+                {permissionStatus === 'granted' ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    <ShieldCheck className="w-3 h-3" />
+                    Activo
+                  </span>
+                ) : (
+                  <button
+                    onClick={handleRequestPush}
+                    className="text-[10px] font-mono font-bold text-cyan-300 bg-cyan-500/20 hover:bg-cyan-500/30 px-2 py-0.5 rounded-full border border-cyan-500/40 transition-colors"
+                  >
+                    Activar Push
+                  </button>
+                )}
+              </div>
+
+              <p className="text-[11px] text-slate-300 font-sans leading-relaxed">
+                Recibe notificaciones inmediatas en tu celular o computador cuando se registre una tardanza o ausencia de <strong className="text-cyan-200">{selectedStudent.nombres}</strong>.
+              </p>
+
+              {/* Action Buttons for Educators / Parents */}
+              <div className="pt-1 flex flex-col gap-2">
+                {acudienteObj?.telefono && (
+                  <a
+                    href={generarEnlaceWhatsApp(
+                      acudienteObj.telefono,
+                      `🏛️ *I.E.T. FRANCISCO JOSÉ DE CALDAS - NATAGAIMA*\nEstimado(a) ${acudienteObj.nombres},\nLe informamos que el reporte de asistencia escolar de *${selectedStudent.nombres} ${selectedStudent.apellidos}* (${gradoObj?.nombre_grado} ${grupoObj?.nombre_grupo}) se encuentra actualizado en la plataforma Softworker.`
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2 bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/50 text-emerald-300 rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-2 transition-all shadow-sm"
+                  >
+                    <MessageSquare className="w-4 h-4 text-emerald-400" />
+                    WhatsApp Acudiente ({acudienteObj.telefono})
+                  </a>
+                )}
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => handleSendTestLateAlert(false)}
+                    disabled={isSendingAlert}
+                    className="py-1.5 px-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-colors"
+                    title="Simular envío de notificación push por tardanza"
+                  >
+                    <Clock className="w-3 h-3" />
+                    Probar Tardanza
+                  </button>
+
+                  <button
+                    onClick={() => handleSendTestLateAlert(true)}
+                    disabled={isSendingAlert}
+                    className="py-1.5 px-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-colors"
+                    title="Simular envío de notificación push por inasistencia"
+                  >
+                    <AlertCircle className="w-3 h-3" />
+                    Probar Ausencia
+                  </button>
+                </div>
               </div>
             </div>
           </div>

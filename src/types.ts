@@ -50,6 +50,8 @@ export interface Asignatura {
   id: string;
   nombre_asignatura: string;
   area?: string;
+  ihs?: number; // Intensidad Horaria Semanal (del boletín)
+  docente_titular?: string;
 }
 
 export interface Acudiente {
@@ -145,10 +147,12 @@ export interface Usuario {
   id: string;
   uid_firebase: string;
   email: string;
+  username?: string;
   rol: UserRole;
   referencia_id: string;
   nombre_display?: string;
   password?: string;
+  activo?: boolean;
 }
 
 export interface Excusa {
@@ -230,3 +234,39 @@ export interface AnotacionObservador {
   fecha_firma?: string;
   creado_el: string;
 }
+
+export type TipoAlertaNotificacion = 'TARDANZA' | 'INASISTENCIA' | 'SALIDA' | 'CONVIVENCIA' | 'PAE' | 'GENERAL';
+
+export interface NotificacionPush {
+  id: string;
+  estudiante_id: string;
+  estudiante_nombre: string;
+  estudiante_documento?: string;
+  grado_nombre?: string;
+  grupo_nombre?: string;
+  acudiente_id?: string;
+  acudiente_nombre?: string;
+  acudiente_telefono?: string;
+  tipo: TipoAlertaNotificacion;
+  titulo: string;
+  mensaje: string;
+  fecha: string;
+  hora: string;
+  materia?: string;
+  docente_nombre?: string;
+  estado_envio: 'ENVIADO' | 'PENDIENTE' | 'FALLIDO';
+  leido: boolean;
+  canal: 'WEB_PUSH' | 'IN_APP' | 'WHATSAPP' | 'MULTI';
+  creado_el: string;
+}
+
+export interface ConfiguracionPushAcudiente {
+  pushHabilitado: boolean;
+  sonidoHabilitado: boolean;
+  alertaTardanzas: boolean;
+  alertaInasistencias: boolean;
+  alertaSalidas: boolean;
+  alertaConvivencia: boolean;
+  telefonoWhatsApp?: string;
+}
+

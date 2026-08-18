@@ -250,7 +250,10 @@ export const AdminCrudModule: React.FC<AdminCrudModuleProps> = ({
       {activeTab === 'DOCENTES' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="font-orbitron text-sm font-bold text-slate-200">Planta Docente I.E.T. Caldas</h3>
+            <div>
+              <h3 className="font-orbitron text-sm font-bold text-slate-200">Planta Docente Oficial — I.E.T. Francisco José de Caldas</h3>
+              <p className="text-[11px] text-slate-400 font-mono">Docentes vinculados con sus respectivas áreas curriculares e Intensidad Horaria Semanal (I.H.S)</p>
+            </div>
             <button
               onClick={() => setShowAddTeacher(true)}
               className="neon-btn-green px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5"
@@ -265,6 +268,7 @@ export const AdminCrudModule: React.FC<AdminCrudModuleProps> = ({
               <thead className="bg-slate-900 text-slate-400 uppercase border-b border-slate-800">
                 <tr>
                   <th className="p-3">Docente</th>
+                  <th className="p-3">Áreas & Asignaturas a Cargo</th>
                   <th className="p-3">Documento</th>
                   <th className="p-3">Correo Institucional</th>
                   <th className="p-3">Teléfono</th>
@@ -275,6 +279,19 @@ export const AdminCrudModule: React.FC<AdminCrudModuleProps> = ({
                 {docentes.map(d => (
                   <tr key={d.id} className="hover:bg-slate-800/40">
                     <td className="p-3 font-sans font-bold text-slate-100">{d.nombres} {d.apellidos}</td>
+                    <td className="p-3">
+                      <div className="flex flex-wrap gap-1">
+                        {d.asignaturas_nombres && d.asignaturas_nombres.length > 0 ? (
+                          d.asignaturas_nombres.map((asig, i) => (
+                            <span key={i} className="inline-block bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/30 px-2 py-0.5 rounded text-[10px] font-bold">
+                              {asig}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-slate-500 italic">Sin asignación</span>
+                        )}
+                      </div>
+                    </td>
                     <td className="p-3 text-slate-400">{d.numero_doc}</td>
                     <td className="p-3 text-[#00F0FF]">{d.correo}</td>
                     <td className="p-3">{d.telefono}</td>
@@ -320,15 +337,28 @@ export const AdminCrudModule: React.FC<AdminCrudModuleProps> = ({
             </ul>
           </div>
 
-          <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-2">
+          <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-2 md:col-span-2 lg:col-span-1">
             <h4 className="font-bold text-[#c084fc] uppercase flex items-center gap-2">
-              <BookOpen className="w-4 h-4" /> Asignaturas ({asignaturas.length})
+              <BookOpen className="w-4 h-4" /> Asignaturas del Boletín ({asignaturas.length})
             </h4>
-            <ul className="space-y-1 text-slate-300">
+            <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
               {asignaturas.map(a => (
-                <li key={a.id} className="p-2 bg-slate-900 rounded-lg">{a.nombre_asignatura}</li>
+                <div key={a.id} className="p-2 bg-slate-900 rounded-lg border border-slate-800 text-[11px]">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-white">{a.nombre_asignatura}</span>
+                    {a.ihs && (
+                      <span className="text-[10px] bg-[#00FF66]/10 text-[#00FF66] px-1.5 py-0.5 rounded font-bold">
+                        I.H.S: {a.ihs}h
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-slate-400 text-[10px] mt-0.5 flex justify-between">
+                    <span>Área: {a.area || 'General'}</span>
+                    <span className="text-[#00F0FF]">{a.docente_titular}</span>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
 
         </div>
@@ -436,6 +466,108 @@ export const AdminCrudModule: React.FC<AdminCrudModuleProps> = ({
                 className="w-full neon-btn-cyan py-3 rounded-xl font-bold uppercase tracking-wider"
               >
                 Guardar Estudiante
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Add Teacher */}
+      {showAddTeacher && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-panel p-6 rounded-3xl border border-[#00FF66]/50 max-w-lg w-full space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 className="font-orbitron text-sm font-bold text-white flex items-center gap-2">
+                <Plus className="w-4 h-4 text-[#00FF66]" />
+                Registrar Nuevo Docente
+              </h3>
+              <button onClick={() => setShowAddTeacher(false)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateTeacher} className="space-y-3 font-mono text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-400 block">Nombres:</label>
+                  <input
+                    type="text"
+                    required
+                    value={newTeacher.nombres}
+                    onChange={(e) => setNewTeacher({...newTeacher, nombres: e.target.value})}
+                    placeholder="Ej. María Camila"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-400 block">Apellidos:</label>
+                  <input
+                    type="text"
+                    required
+                    value={newTeacher.apellidos}
+                    onChange={(e) => setNewTeacher({...newTeacher, apellidos: e.target.value})}
+                    placeholder="Ej. Bernal"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-100"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-400 block">Documento Identidad:</label>
+                  <input
+                    type="text"
+                    required
+                    value={newTeacher.numero_doc}
+                    onChange={(e) => setNewTeacher({...newTeacher, numero_doc: e.target.value})}
+                    placeholder="Ej. 1110543220"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-400 block">Teléfono / Celular:</label>
+                  <input
+                    type="text"
+                    value={newTeacher.telefono}
+                    onChange={(e) => setNewTeacher({...newTeacher, telefono: e.target.value})}
+                    placeholder="Ej. 3118901220"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-100"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-slate-400 block">Correo Institucional:</label>
+                <input
+                  type="email"
+                  required
+                  value={newTeacher.correo}
+                  onChange={(e) => setNewTeacher({...newTeacher, correo: e.target.value})}
+                  placeholder="Ej. camila.bernal@ietcaldas.edu.co"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-[#00F0FF]"
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-400 block">Área / Asignatura Principal:</label>
+                <select
+                  value={newTeacher.asignatura_id}
+                  onChange={(e) => setNewTeacher({...newTeacher, asignatura_id: e.target.value})}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-100"
+                >
+                  {asignaturas.map(a => (
+                    <option key={a.id} value={a.id}>
+                      {a.nombre_asignatura} {a.area ? `(${a.area})` : ''} {a.ihs ? `— IHS: ${a.ihs}h` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full neon-btn-green py-3 rounded-xl font-bold uppercase tracking-wider mt-4"
+              >
+                Guardar Docente
               </button>
             </form>
           </div>

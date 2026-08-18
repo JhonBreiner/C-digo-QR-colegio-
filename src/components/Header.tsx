@@ -36,6 +36,8 @@ interface HeaderProps {
   onOpenRegisterModal?: () => void;
   onOpenLoginModal?: () => void;
   onLogout?: () => void;
+  onOpenNotificationCenter?: () => void;
+  unreadNotificationsCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -50,6 +52,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenRegisterModal,
   onOpenLoginModal,
   onLogout,
+  onOpenNotificationCenter,
+  unreadNotificationsCount = 0,
 }) => {
   const [time, setTime] = useState<string>('');
 
@@ -65,9 +69,9 @@ export const Header: React.FC<HeaderProps> = ({
 
   const navItems = [
     { id: 'ESTUDIANTE', label: 'Portal Estudiante', icon: GraduationCap, roles: ['ADMIN', 'DOCENTE', 'ACUDIENTE', 'ESTUDIANTE'] },
-    { id: 'SCANNER', label: 'Escáner QR', icon: ScanLine, roles: ['ADMIN', 'DOCENTE'] },
+    { id: 'SCANNER', label: 'Asistencia QR Aulas', icon: ScanLine, roles: ['ADMIN', 'DOCENTE'] },
+    { id: 'ALERTAS', label: 'Alertas de Asistencia', icon: Bell, roles: ['ADMIN', 'DOCENTE', 'ACUDIENTE', 'ESTUDIANTE'] },
     { id: 'PASES_SALIDA', label: 'Pases de Salida', icon: DoorOpen, roles: ['ADMIN', 'DOCENTE', 'ACUDIENTE', 'ESTUDIANTE'] },
-    { id: 'PAE_ALERTAS', label: 'PAE & Alertas', icon: Utensils, roles: ['ADMIN', 'DOCENTE', 'ACUDIENTE', 'ESTUDIANTE'] },
     { id: 'OBSERVADOR', label: 'Observador Digital', icon: Award, roles: ['ADMIN', 'DOCENTE', 'ACUDIENTE', 'ESTUDIANTE'] },
     { id: 'CARNETS', label: 'Carnetización', icon: QrCode, roles: ['ADMIN', 'DOCENTE', 'ACUDIENTE', 'ESTUDIANTE'] },
     { id: 'DASHBOARD', label: 'Tablero HUD', icon: LayoutDashboard, roles: ['ADMIN', 'DOCENTE', 'ACUDIENTE', 'ESTUDIANTE'] },
@@ -135,6 +139,28 @@ export const Header: React.FC<HeaderProps> = ({
               <Clock className="w-4 h-4 text-[#00F0FF] animate-pulse" />
               <span className="font-semibold tracking-wider">{time || '00:00:00'}</span>
             </div>
+
+            {/* Push API & Notifications Center Button */}
+            {onOpenNotificationCenter && (
+              <button
+                onClick={onOpenNotificationCenter}
+                className="relative px-3 py-1.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 rounded-xl text-xs font-mono text-slate-300 hover:text-cyan-300 flex items-center gap-2 transition-all shadow-sm group"
+                title="Abrir Centro de Notificaciones Push & Alertas a Acudientes"
+              >
+                <div className="relative">
+                  <Bell className="w-4 h-4 text-cyan-400 group-hover:animate-swing" />
+                  {unreadNotificationsCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-[9px] font-bold font-mono flex items-center justify-center animate-pulse">
+                      {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+                    </span>
+                  )}
+                </div>
+                <span className="hidden sm:inline font-semibold text-[11px]">
+                  Alertas Push
+                </span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping hidden md:inline-block" title="Servicio Push Activo" />
+              </button>
+            )}
 
             {/* Live Indicator Counters */}
             <div className="flex items-center space-x-2 px-3 py-1.5 bg-slate-900/80 border border-slate-800 rounded-lg text-xs font-mono">

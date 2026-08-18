@@ -10,8 +10,15 @@ import { RegisterStudentModal } from './components/RegisterStudentModal';
 import { LoginModal } from './components/LoginModal';
 import { StudentPortal } from './components/StudentPortal';
 import { GatePassModule } from './components/GatePassModule';
-import { PAEAndAlertsModule } from './components/PAEAndAlertsModule';
+import { EarlyAlertsModule } from './components/EarlyAlertsModule';
 import { SchoolObserverModule } from './components/SchoolObserverModule';
+import { NotificationToastContainer } from './components/NotificationToastContainer';
+import { NotificationCenterModal } from './components/NotificationCenterModal';
+import { 
+  subscribeToInAppNotifications, 
+  getHistorialNotificaciones, 
+  despacharAlertaAsistencia 
+} from './services/notificationService';
 
 import { 
   getLocalStore, 
@@ -20,7 +27,7 @@ import {
 } from './firebase/config';
 
 import type { 
-  UserRole, Estudiante, Docente, Asistencia, Excusa, PaseSalida, RegistroPAE, AnotacionObservador,
+  UserRole, Estudiante, Docente, Asistencia, Excusa, PaseSalida, AnotacionObservador,
   Grado, Grupo, Sede, Asignatura, EPS, ARL, TipoDocumento, Acudiente, Usuario 
 } from './types';
 
@@ -30,9 +37,22 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState<boolean>(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
+  const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState<boolean>(false);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
 
   // Master State loaded from Store
   const [dbData, setDbData] = useState(() => getLocalStore());
+
+  // Subscribe to real-time notifications to update badge
+  useEffect(() => {
+    const history = getHistorialNotificaciones();
+    setUnreadCount(history.length);
+
+    const unsubscribe = subscribeToInAppNotifications((_notif) => {
+      setUnreadCount(prev => prev + 1);
+    });
+    return unsubscribe;
+  }, []);
 
   // Current active user state
   const [currentUser, setCurrentUser] = useState<Usuario>(() => dbData.usuarios[0] || {
@@ -74,6 +94,30 @@ export default function App() {
       ...prev,
       asistencias: [fullAsistencia, ...prev.asistencias]
     }));
+
+    // If student arrived late, automatically trigger Web Push & In-App alert
+    if (newAsistenciaData.estado === 'TARDE') {
+      const student = dbData.estudiantes.find(e => e.id === newAsistenciaData.estudiante_id);
+      if (student) {
+        const acudiente = dbData.acudientes.find(a => a.id === student.acudiente_id);
+        const grado = dbData.grados.find(g => g.id === student.grado_id);
+        const grupo = dbData.grupos.find(g => g.id === student.grupo_id);
+        const asignatura = dbData.asignaturas.find(as => as.id === newAsistenciaData.asignatura_id);
+        const docente = dbData.docentes.find(d => d.id === newAsistenciaData.docente_id);
+
+        despacharAlertaAsistencia({
+          estudiante: student,
+          acudiente,
+          tipo: 'TARDANZA',
+          fecha: newAsistenciaData.fecha,
+          hora: newAsistenciaData.hora_ingreso,
+          materia: asignatura?.nombre_asignatura || 'Ingreso Institucional',
+          docenteNombre: docente ? `${docente.nombres} ${docente.apellidos}` : 'Control Portería',
+          gradoNombre: grado?.nombre_grado,
+          grupoNombre: grupo?.nombre_grupo
+        });
+      }
+    }
   };
 
   // Handler: Register Medical Excusa
@@ -144,19 +188,6 @@ export default function App() {
     }));
   };
 
-  // Handler: Register PAE Meal / Room entry
-  const handleRegisterPAE = async (nuevoRegistro: Omit<RegistroPAE, 'id'>) => {
-    const newReg: RegistroPAE = {
-      id: `PAE-${Math.floor(1000 + Math.random() * 9000)}`,
-      ...nuevoRegistro
-    };
-
-    setDbData(prev => ({
-      ...prev,
-      registros_pae: [newReg, ...(prev.registros_pae || [])]
-    }));
-  };
-
   // Handler: Add Observer Annotation (Convivencia Escolar)
   const handleAddAnotacionObservador = async (nuevaAnotacion: Omit<AnotacionObservador, 'id' | 'creado_el'>) => {
     const newObs: AnotacionObservador = {
@@ -214,9 +245,14 @@ export default function App() {
 
   // Handler: Add Teacher
   const handleAddDocente = async (docenteData: Omit<Docente, 'id'>) => {
+    const selectedAsig = dbData.asignaturas.find(a => a.id === docenteData.asignatura_id);
+    const asigName = selectedAsig ? `${selectedAsig.nombre_asignatura}${selectedAsig.ihs ? ` (IHS: ${selectedAsig.ihs})` : ''}` : '';
+    
     const newDocente: Docente = {
       id: `DOC-${Date.now().toString().slice(-4)}`,
-      ...docenteData
+      ...docenteData,
+      asignaturas_ids: docenteData.asignaturas_ids || (docenteData.asignatura_id ? [docenteData.asignatura_id] : []),
+      asignaturas_nombres: docenteData.asignaturas_nombres || (asigName ? [asigName] : [])
     };
 
     setDbData(prev => ({
@@ -260,6 +296,24 @@ export default function App() {
         onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
         onOpenLoginModal={() => setIsLoginModalOpen(true)}
         onLogout={() => setIsLoginModalOpen(true)}
+        onOpenNotificationCenter={() => {
+          setIsNotificationCenterOpen(true);
+          setUnreadCount(0);
+        }}
+        unreadNotificationsCount={unreadCount}
+      />
+
+      {/* Global In-App Notification Toast Container (Real-Time HUD Toasts) */}
+      <NotificationToastContainer />
+
+      {/* Notification Center Modal (Push Settings, Simulator, History) */}
+      <NotificationCenterModal
+        isOpen={isNotificationCenterOpen}
+        onClose={() => setIsNotificationCenterOpen(false)}
+        estudiantes={dbData.estudiantes}
+        acudientes={dbData.acudientes}
+        grados={dbData.grados}
+        grupos={dbData.grupos}
       />
 
       {/* Main View Container */}
@@ -297,11 +351,10 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'PAE_ALERTAS' && (
-          <PAEAndAlertsModule
+        {activeTab === 'ALERTAS' && (
+          <EarlyAlertsModule
             estudiantes={dbData.estudiantes}
             asistencias={dbData.asistencias}
-            registrosPAE={dbData.registros_pae || []}
             grados={dbData.grados}
             grupos={dbData.grupos}
             sedes={dbData.sedes}
@@ -309,7 +362,6 @@ export default function App() {
             acudientes={dbData.acudientes}
             currentRole={currentRole}
             currentUser={currentUser}
-            onRegisterPAE={handleRegisterPAE}
           />
         )}
 
