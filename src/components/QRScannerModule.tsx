@@ -247,27 +247,67 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
     }
   };
 
-  // Process scanned QR code content (student code or json)
+  // Process scanned QR code content (student code, document, id, json or url)
   const handleScannedCode = async (code: string) => {
     let studentCode = code.trim();
+    let studentDoc = '';
+    let studentId = '';
     
-    // Try parsing if JSON
+    // 1. Try parsing if JSON payload
     try {
       const parsed = JSON.parse(code);
-      if (parsed.codigo) studentCode = parsed.codigo;
-      if (parsed.codigo_estudiantil) studentCode = parsed.codigo_estudiantil;
+      if (typeof parsed === 'object' && parsed !== null) {
+        if (parsed.codigo_estudiantil) studentCode = String(parsed.codigo_estudiantil).trim();
+        else if (parsed.cod) studentCode = String(parsed.cod).trim();
+        else if (parsed.codigo) studentCode = String(parsed.codigo).trim();
+
+        if (parsed.numero_doc) studentDoc = String(parsed.numero_doc).trim();
+        else if (parsed.doc) studentDoc = String(parsed.doc).trim();
+
+        if (parsed.id) studentId = String(parsed.id).trim();
+      }
     } catch {
-      // Plain text
+      // Plain text, URL or separator-based string
+      // Check if it is a URL with query param or path like ?cod=... or /estudiantes/...
+      if (code.includes('?')) {
+        try {
+          const urlObj = new URL(code.startsWith('http') ? code : `https://dummy.co/${code}`);
+          const codParam = urlObj.searchParams.get('cod') || urlObj.searchParams.get('codigo') || urlObj.searchParams.get('codigo_estudiantil');
+          const docParam = urlObj.searchParams.get('doc') || urlObj.searchParams.get('numero_doc');
+          const idParam = urlObj.searchParams.get('id');
+          if (codParam) studentCode = codParam.trim();
+          if (docParam) studentDoc = docParam.trim();
+          if (idParam) studentId = idParam.trim();
+        } catch {
+          // ignore url parse failure
+        }
+      }
     }
 
-    const student = estudiantes.find(e => 
-      e.codigo_estudiantil.toLowerCase() === studentCode.toLowerCase() ||
-      e.numero_doc === studentCode
-    );
+    // Clean comparisons
+    const cleanRaw = studentCode.toLowerCase();
+    const cleanDoc = studentDoc.toLowerCase();
+    const cleanId = studentId.toLowerCase();
+
+    // 2. Comprehensive multi-key student lookup
+    const student = estudiantes.find(e => {
+      const eCod = e.codigo_estudiantil.toLowerCase();
+      const eDoc = e.numero_doc.toLowerCase();
+      const eId = e.id.toLowerCase();
+      const eFullName = `${e.nombres} ${e.apellidos}`.toLowerCase();
+
+      return (
+        (cleanRaw && (eCod === cleanRaw || eDoc === cleanRaw || eId === cleanRaw || eFullName === cleanRaw)) ||
+        (cleanDoc && eDoc === cleanDoc) ||
+        (cleanId && eId === cleanId) ||
+        // Check if raw text contains exact student code or document
+        (cleanRaw.length >= 6 && (cleanRaw.includes(eCod) || cleanRaw.includes(eDoc)))
+      );
+    });
 
     if (!student) {
       playBeep(220, 'sawtooth', 0.3);
-      alert(`⚠️ Código QR no reconocido en el sistema: ${studentCode}`);
+      alert(`⚠️ Código QR no reconocido en el sistema: ${studentCode || code}`);
       return;
     }
 
@@ -281,15 +321,26 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
     const nowFormattedTime = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
     const todayStr = now.toISOString().split('T')[0];
 
+    const targetAsignatura = selectedAsignatura || asignaturas[0]?.id || 'ASI-01';
+    const asigObj = asignaturas.find(a => a.id === targetAsignatura);
+    const docObj = docentes.find(d => d.id === currentDocenteId) || docentes[0];
+
     const asistenciaData: Omit<Asistencia, 'id'> = {
       estudiante_id: student.id,
-      docente_id: currentDocenteId || docentes[0]?.id || 'DOC-01',
+      docente_id: currentDocenteId || docObj?.id || 'DOC-01',
+      docente_nombre: docObj ? `${docObj.nombres} ${docObj.apellidos}` : 'Docente Titular',
+      estudiante_nombre: `${student.nombres} ${student.apellidos}`,
+      estudiante_documento: student.numero_doc,
+      grado_id: student.grado_id,
+      grado_nombre: grados.find(g => g.id === student.grado_id)?.nombre_grado || '11°',
+      grupo_id: student.grupo_id,
       fecha: todayStr,
       hora_ingreso: nowFormattedTime,
       hora_salida: '',
       estado,
-      observacion: isLate ? 'Escaneo QR - Retardo automático registrado' : 'Escaneo QR - Asistencia puntual',
-      asignatura_id: selectedAsignatura
+      observacion: isLate ? 'Escaneo QR Aula - Retardo automático registrado' : 'Escaneo QR Aula - Asistencia puntual',
+      asignatura_id: targetAsignatura,
+      asignatura_nombre: asigObj?.nombre_asignatura || 'Asignatura'
     };
 
     await onRegisterAttendance(asistenciaData);

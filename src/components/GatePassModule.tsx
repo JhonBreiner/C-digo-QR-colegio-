@@ -231,18 +231,48 @@ export const GatePassModule: React.FC<GatePassModuleProps> = ({
     }
   }, [selectedStudentId, estudiantes, acudientes]);
 
-  // Handle Verify in Portería
+  // Handle Verify in Portería (Enhanced to accept JSON, plain codes, documents, URLs)
   const handleVerifyStudent = (query: string) => {
-    const cleanQ = query.trim().toLowerCase();
-    if (!cleanQ) return;
+    let cleanQ = query.trim();
+    let studentDoc = '';
+    let studentId = '';
+
+    // 1. Check if query is a JSON string
+    try {
+      const parsed = JSON.parse(query);
+      if (typeof parsed === 'object' && parsed !== null) {
+        if (parsed.codigo_estudiantil) cleanQ = String(parsed.codigo_estudiantil).trim();
+        else if (parsed.cod) cleanQ = String(parsed.cod).trim();
+        else if (parsed.codigo) cleanQ = String(parsed.codigo).trim();
+
+        if (parsed.numero_doc) studentDoc = String(parsed.numero_doc).trim();
+        else if (parsed.doc) studentDoc = String(parsed.doc).trim();
+
+        if (parsed.id) studentId = String(parsed.id).trim();
+      }
+    } catch {
+      // Plain text
+    }
+
+    if (!cleanQ && !studentDoc && !studentId) return;
+
+    const lowerQ = cleanQ.toLowerCase();
+    const lowerDoc = studentDoc.toLowerCase();
+    const lowerId = studentId.toLowerCase();
 
     // Find student
-    const studentFound = estudiantes.find(e => 
-      e.id.toLowerCase() === cleanQ ||
-      e.codigo_estudiantil.toLowerCase() === cleanQ ||
-      e.numero_doc.toLowerCase() === cleanQ ||
-      `${e.nombres} ${e.apellidos}`.toLowerCase().includes(cleanQ)
-    );
+    const studentFound = estudiantes.find(e => {
+      const eCod = e.codigo_estudiantil.toLowerCase();
+      const eDoc = e.numero_doc.toLowerCase();
+      const eId = e.id.toLowerCase();
+      const eFullName = `${e.nombres} ${e.apellidos}`.toLowerCase();
+
+      return (
+        (lowerQ && (eCod === lowerQ || eDoc === lowerQ || eId === lowerQ || eFullName.includes(lowerQ))) ||
+        (lowerDoc && eDoc === lowerDoc) ||
+        (lowerId && eId === lowerId)
+      );
+    });
 
     if (!studentFound) {
       // Check if it's a pass security code or pass id
