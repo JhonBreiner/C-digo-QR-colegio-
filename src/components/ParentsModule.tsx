@@ -7,15 +7,18 @@ import {
   PlusCircle, 
   Clock, 
   CheckCircle2, 
+  XCircle,
   AlertCircle, 
   FileText,
   HeartPulse,
   Phone,
   Paperclip,
   Sparkles,
-  X
+  X,
+  Check,
+  UserCheck
 } from 'lucide-react';
-import type { Estudiante, Asistencia, Excusa, Grado, Grupo, EPS, Acudiente } from '../types';
+import type { Estudiante, Asistencia, Excusa, Grado, Grupo, EPS, Acudiente, UserRole } from '../types';
 
 interface ParentsModuleProps {
   estudiantes: Estudiante[];
@@ -25,7 +28,9 @@ interface ParentsModuleProps {
   grupos: Grupo[];
   epsList: EPS[];
   acudientes: Acudiente[];
+  currentRole: UserRole;
   onSubmitExcusa: (excusa: Omit<Excusa, 'id' | 'creado_el' | 'estado'>) => Promise<void>;
+  onUpdateExcusaState?: (excusaId: string, nuevoEstado: 'APROBADA' | 'RECHAZADA') => void;
 }
 
 export const ParentsModule: React.FC<ParentsModuleProps> = ({
@@ -36,7 +41,9 @@ export const ParentsModule: React.FC<ParentsModuleProps> = ({
   grupos,
   epsList,
   acudientes,
+  currentRole,
   onSubmitExcusa,
+  onUpdateExcusaState,
 }) => {
   const [searchTerm, setSearchTerm] = useState<string>('2026-CALDAS-003'); // default student
   const [selectedStudent, setSelectedStudent] = useState<Estudiante | null>(
@@ -99,6 +106,8 @@ export const ParentsModule: React.FC<ParentsModuleProps> = ({
   const epsObj = epsList.find(e => e.id === selectedStudent?.eps_id);
   const acudienteObj = acudientes.find(a => a.id === selectedStudent?.acudiente_id);
 
+  const canApproveExcusas = currentRole === 'ADMIN' || currentRole === 'DOCENTE';
+
   return (
     <div className="space-y-6">
       
@@ -110,7 +119,7 @@ export const ParentsModule: React.FC<ParentsModuleProps> = ({
             Portal de Acudientes & Excusas Médicas
           </h2>
           <p className="text-xs text-slate-400 font-mono">
-            Consulta de historial de asistencia y radicación de excusas e incapacidades médicas
+            Consulta de historial de asistencia y radicación / aprobación de excusas e incapacidades médicas
           </p>
         </div>
 
@@ -161,7 +170,12 @@ export const ParentsModule: React.FC<ParentsModuleProps> = ({
               />
               <div>
                 <h3 className="font-sans font-bold text-base text-slate-100">{selectedStudent.nombres} {selectedStudent.apellidos}</h3>
-                <span className="text-xs font-mono text-[#00F0FF] font-bold block">{selectedStudent.codigo_estudiantil}</span>
+                <div className="flex items-center justify-center gap-2 mt-1">
+                  <span className="text-xs font-mono text-[#00F0FF] font-bold">{selectedStudent.codigo_estudiantil}</span>
+                  <span className="text-xs font-mono font-bold text-[#00FF66] bg-[#00FF66]/10 px-2 py-0.5 rounded-full border border-[#00FF66]/30">
+                    RH: {selectedStudent.rh || 'O+'}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -223,7 +237,9 @@ export const ParentsModule: React.FC<ParentsModuleProps> = ({
                           <td className="py-2.5 px-3 text-slate-100">{a.hora_ingreso}</td>
                           <td className="py-2.5 px-3">
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              a.estado === 'PRESENTE' ? 'bg-[#00FF66]/10 text-[#00FF66]' : 'bg-amber-500/10 text-amber-400'
+                              a.estado === 'PRESENTE' ? 'bg-[#00FF66]/10 text-[#00FF66]' :
+                              a.estado === 'EXCUSADO' ? 'bg-[#00F0FF]/10 text-[#00F0FF]' :
+                              'bg-amber-500/10 text-amber-400'
                             }`}>
                               {a.estado}
                             </span>
@@ -237,12 +253,19 @@ export const ParentsModule: React.FC<ParentsModuleProps> = ({
               </div>
             </div>
 
-            {/* Excusal Track Records */}
+            {/* Excusal Track Records with Approval Buttons for Docentes / Admin */}
             <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-              <h3 className="font-orbitron text-sm font-bold text-slate-200 flex items-center gap-2">
-                <FileCheck2 className="w-4 h-4 text-[#7000FF]" />
-                Excusas e Incapacidades Médicas Radicadas
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-orbitron text-sm font-bold text-slate-200 flex items-center gap-2">
+                  <FileCheck2 className="w-4 h-4 text-[#7000FF]" />
+                  Excusas e Incapacidades Médicas Radicadas
+                </h3>
+                {canApproveExcusas && (
+                  <span className="text-[10px] text-[#00F0FF] bg-[#00F0FF]/10 px-2 py-1 rounded-lg font-mono">
+                    Modo Gestión Docente / Coordinación
+                  </span>
+                )}
+              </div>
 
               <div className="space-y-3">
                 {studentExcusas.length === 0 ? (
@@ -251,25 +274,50 @@ export const ParentsModule: React.FC<ParentsModuleProps> = ({
                   </p>
                 ) : (
                   studentExcusas.map(ex => (
-                    <div key={ex.id} className="p-4 bg-slate-900/80 border border-slate-800 rounded-xl space-y-2 font-mono text-xs">
+                    <div key={ex.id} className="p-4 bg-slate-900/80 border border-slate-800 rounded-xl space-y-3 font-mono text-xs">
                       <div className="flex justify-between items-center">
                         <span className="text-[#00F0FF] font-bold">
                           Período: {ex.fecha_inicio} al {ex.fecha_fin}
                         </span>
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                           ex.estado === 'APROBADA' 
-                            ? 'bg-[#00FF66]/20 text-[#00FF66] border border-[#00FF66]/40' 
+                            ? 'bg-[#00FF66]/20 text-[#00FF66] border border-[#00FF66]/40' :
+                          ex.estado === 'RECHAZADA'
+                            ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
                             : 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
                         }`}>
                           {ex.estado}
                         </span>
                       </div>
                       <p className="text-slate-300 font-sans">{ex.motivo}</p>
-                      {ex.archivo_nombre && (
-                        <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                          <Paperclip className="w-3 h-3 text-[#7000FF]" /> Soporte: {ex.archivo_nombre}
-                        </span>
-                      )}
+                      
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800/60">
+                        {ex.archivo_nombre ? (
+                          <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                            <Paperclip className="w-3 h-3 text-[#7000FF]" /> Soporte: {ex.archivo_nombre}
+                          </span>
+                        ) : <span />}
+
+                        {canApproveExcusas && onUpdateExcusaState && (
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => onUpdateExcusaState(ex.id, 'APROBADA')}
+                              className="px-2.5 py-1 bg-[#00FF66]/10 hover:bg-[#00FF66]/20 border border-[#00FF66]/40 text-[#00FF66] rounded-lg text-[10px] font-bold flex items-center gap-1"
+                            >
+                              <Check className="w-3 h-3" />
+                              Aprobar
+                            </button>
+
+                            <button
+                              onClick={() => onUpdateExcusaState(ex.id, 'RECHAZADA')}
+                              className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/40 text-rose-400 rounded-lg text-[10px] font-bold flex items-center gap-1"
+                            >
+                              <XCircle className="w-3 h-3" />
+                              Desaprobar
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))
                 )}

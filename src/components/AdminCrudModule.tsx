@@ -392,7 +392,7 @@ export const AdminCrudModule: React.FC<AdminCrudModuleProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-slate-400 block">Grado:</label>
                   <select
@@ -402,6 +402,18 @@ export const AdminCrudModule: React.FC<AdminCrudModuleProps> = ({
                   >
                     {grados.map(g => (
                       <option key={g.id} value={g.id}>{g.nombre_grado}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-slate-400 block">Grupo:</label>
+                  <select
+                    value={newStudent.grupo_id}
+                    onChange={(e) => setNewStudent({...newStudent, grupo_id: e.target.value})}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-100"
+                  >
+                    {grupos.map(grp => (
+                      <option key={grp.id} value={grp.id}>{grp.nombre_grupo}</option>
                     ))}
                   </select>
                 </div>

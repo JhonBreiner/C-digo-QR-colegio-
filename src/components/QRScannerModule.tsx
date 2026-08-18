@@ -342,7 +342,7 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
           <div>
             <h2 className="font-orbitron text-base font-bold text-[#00F0FF] flex items-center gap-2">
               <Zap className="w-5 h-5 text-[#00FF66] animate-pulse" />
-              Sesión de Escáner QR de Asistencia
+              Control de Asistencia por Cámara
             </h2>
             <p className="text-xs text-slate-400 font-mono">
               Institución Educativa Técnica Francisco José de Caldas - Natagaima
@@ -356,9 +356,9 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
                 onChange={(e) => setSelectedCameraId(e.target.value)}
                 className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none"
               >
-                {cameras.map((cam) => (
+                {cameras.map((cam, idx) => (
                   <option key={cam.id} value={cam.id}>
-                    📷 {cam.label || `Cámara (${cam.id.slice(0, 6)}...)`}
+                    Cámara {idx + 1}
                   </option>
                 ))}
               </select>
@@ -370,7 +370,7 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
                 className="neon-btn-green px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 shadow-lg"
               >
                 <Camera className="w-4 h-4" />
-                Iniciar Cámara QR
+                Iniciar Cámara
               </button>
             ) : (
               <button
@@ -457,7 +457,7 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
           <div className="flex items-center justify-between">
             <h3 className="font-orbitron text-sm font-bold text-slate-200 flex items-center gap-2">
               <ScanLine className="w-4 h-4 text-[#00F0FF]" />
-              Visor de Cámara con Láser Neón
+              Visor de Cámara
             </h3>
             <span className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
               <Volume2 className="w-3.5 h-3.5 text-[#00FF66]" /> Sonido Bip Activo
@@ -482,11 +482,8 @@ export const QRScannerModule: React.FC<QRScannerModuleProps> = ({
             <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-[#00F0FF]"></div>
 
             {!isScanning && (
-              <div className="text-center p-6 space-y-3 z-10">
-                <Camera className="w-16 h-16 text-slate-700 mx-auto animate-pulse" />
-                <p className="text-xs font-mono text-slate-400 max-w-xs">
-                  Haz clic en <span className="text-[#00FF66] font-bold">"Iniciar Cámara QR"</span> para escanear el carné estudiantil.
-                </p>
+              <div className="text-center p-6 space-y-3 z-10 pointer-events-none opacity-40">
+                <Camera className="w-12 h-12 text-slate-800 mx-auto" />
               </div>
             )}
           </div>

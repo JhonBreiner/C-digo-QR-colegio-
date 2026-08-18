@@ -60,6 +60,27 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Pases de Salida & Control de Portería
+    match /pases_salida/{id} {
+      allow read: if isAuthenticated();
+      allow create, update: if isDocente() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // PAE & Restaurante Escolar
+    match /registros_pae/{id} {
+      allow read: if isAuthenticated();
+      allow create, update: if isDocente() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Observador del Alumno (Ley 1620 de Convivencia)
+    match /anotaciones_observador/{id} {
+      allow read: if isAuthenticated();
+      allow create, update: if isDocente() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
     // Excusas Médicas / Justificaciones
     match /excusas/{id} {
       allow read: if isAuthenticated();

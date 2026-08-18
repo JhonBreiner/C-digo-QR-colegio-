@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import jsPDF from 'jspdf';
+import { SchoolCrest, getSchoolCrestDataUri, getSchoolCrestPngDataUrl } from './SchoolCrest';
 import type { Estudiante, Grado, Grupo, Sede, EPS, ARL, Acudiente } from '../types';
 
 interface QRCardGeneratorProps {
@@ -65,7 +66,7 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
   const epsObj = epsList.find(e => e.id === selectedStudent?.eps_id);
   const acudienteObj = acudientes.find(a => a.id === selectedStudent?.acudiente_id);
 
-  // Generate QR Code Data URL whenever selected student changes
+  // Generate High-Contrast QR Code Data URL (Pure Black on Pure White) whenever selected student changes
   useEffect(() => {
     if (!selectedStudent) return;
     const qrPayload = JSON.stringify({
@@ -77,18 +78,18 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
     });
 
     QRCode.toDataURL(qrPayload, {
-      width: 300,
+      width: 400,
       margin: 1,
       color: {
-        dark: '#00F0FF',
-        light: '#0b0f19'
+        dark: '#000000',  // High contrast pure black modules
+        light: '#FFFFFF' // High contrast pure white background
       }
     })
     .then(url => setQrDataUrl(url))
     .catch(err => console.error("Error generating QR:", err));
   }, [selectedStudent]);
 
-  // Download QR Code PNG
+  // Download High-Contrast QR Code PNG
   const handleDownloadQRPng = () => {
     if (!qrDataUrl || !selectedStudent) return;
     const link = document.createElement('a');
@@ -97,8 +98,8 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
     link.click();
   };
 
-  // Export Individual PDF Card
-  const handleExportIndividualPDF = () => {
+  // Export Individual PDF Card with School Crest, Student Data, RH, and QR
+  const handleExportIndividualPDF = async () => {
     if (!selectedStudent) return;
 
     const doc = new jsPDF({
@@ -107,7 +108,7 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
       format: [85.6, 53.9] // Standard CR80 ID Card dimensions in mm
     });
 
-    // Dark Cyber Card Background
+    // Dark Background for CR80 card
     doc.setFillColor(11, 15, 25);
     doc.rect(0, 0, 85.6, 53.9, 'F');
 
@@ -116,103 +117,158 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
     doc.setLineWidth(0.5);
     doc.rect(1.5, 1.5, 82.6, 50.9);
 
+    // Official Triangular School Crest Emblem
+    const crestUri = await getSchoolCrestPngDataUrl();
+    if (crestUri) {
+      try {
+        doc.addImage(crestUri, 'PNG', 3, 3, 9, 9);
+      } catch (err) {
+        console.warn("Could not add crest image to PDF:", err);
+      }
+    }
+
     // Header Title
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6);
+    doc.setFontSize(5.5);
     doc.setTextColor(0, 240, 255);
-    doc.text('I.E.T. FRANCISCO JOSÉ DE CALDAS', 42.8, 5, { align: 'center' });
+    doc.text('I.E.T. FRANCISCO JOSÉ DE CALDAS', 46, 5.5, { align: 'center' });
     
-    doc.setFontSize(4.5);
-    doc.setTextColor(150, 160, 180);
-    doc.text('NATAGAIMA - TOLIMA • CARNÉ ESTUDIANTIL', 42.8, 7.5, { align: 'center' });
+    doc.setFontSize(4);
+    doc.setTextColor(0, 255, 102);
+    doc.text('NATAGAIMA - TOLIMA • CARNÉ ESTUDIANTIL OFICIAL', 46, 8, { align: 'center' });
 
     // Header divider
     doc.setDrawColor(112, 0, 255);
-    doc.line(4, 9, 81.6, 9);
+    doc.line(3, 11, 82.6, 11);
 
     // Student Info Text
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
-    doc.text(`${selectedStudent.nombres.toUpperCase()}`, 4, 14);
-    doc.text(`${selectedStudent.apellidos.toUpperCase()}`, 4, 17.5);
+    doc.text(`${selectedStudent.nombres.toUpperCase()} ${selectedStudent.apellidos.toUpperCase()}`, 3, 16);
 
     doc.setFontSize(5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(0, 240, 255);
-    doc.text(`CÓDIGO: ${selectedStudent.codigo_estudiantil}`, 4, 22);
+    doc.text(`CÓDIGO: ${selectedStudent.codigo_estudiantil}`, 3, 20.5);
 
+    doc.setTextColor(220, 225, 240);
+    doc.text(`DOC: ${selectedStudent.numero_doc}`, 3, 24);
+    doc.text(`GRADO: ${gradoObj?.nombre_grado || ''} (${grupoObj?.nombre_grupo || ''})`, 3, 27.5);
+    doc.text(`SEDE: ${sedeObj?.nombre_sede || ''}`, 3, 31);
+    
+    // RH & EPS
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 255, 102);
+    doc.text(`RH: ${selectedStudent.rh || 'O+'}`, 3, 35);
+    doc.setFont('helvetica', 'normal');
     doc.setTextColor(200, 210, 225);
-    doc.text(`DOC: ${selectedStudent.numero_doc}`, 4, 25.5);
-    doc.text(`GRADO: ${gradoObj?.nombre_grado || ''} (${grupoObj?.nombre_grupo || ''})`, 4, 29);
-    doc.text(`SEDE: ${sedeObj?.nombre_sede || ''}`, 4, 32.5);
-    doc.text(`EPS: ${epsObj?.nombre_eps || ''}`, 4, 36);
-    doc.text(`ACUDIENTE: ${acudienteObj ? `${acudienteObj.nombres} (${acudienteObj.telefono})` : ''}`, 4, 39.5);
+    doc.text(`EPS: ${epsObj?.nombre_eps || 'Asmet Salud'}`, 3, 38.5);
+    
+    doc.text(`ACUDIENTE: ${acudienteObj ? `${acudienteObj.nombres} (${acudienteObj.telefono})` : 'N/A'}`, 3, 42);
 
-    // QR Image on right side
+    // High Contrast QR Image on right side (white background, black modules)
     if (qrDataUrl) {
-      doc.addImage(qrDataUrl, 'PNG', 54, 12, 26, 26);
+      doc.setFillColor(255, 255, 255);
+      doc.rect(53.5, 13.5, 27, 27, 'F'); // White container behind QR
+      try {
+        doc.addImage(qrDataUrl, 'PNG', 54, 14, 26, 26);
+      } catch (err) {
+        console.warn("Could not add QR image to PDF:", err);
+      }
     }
 
     // Footer Software Brand
     doc.setFontSize(4);
-    doc.setTextColor(0, 255, 102);
-    doc.text('SISTEMA CONTROL QR - SOFTWORKER 2026', 42.8, 51, { align: 'center' });
+    doc.setTextColor(0, 240, 255);
+    doc.text('SOFTWORKER CYBER-SAAS 2026 • I.E.T. FRANCISCO JOSÉ DE CALDAS', 42.8, 51, { align: 'center' });
 
     doc.save(`CARNE_${selectedStudent.codigo_estudiantil}.pdf`);
   };
 
-  // Export Batch Sheet PDF with 4 ID Cards per page
-  const handleExportBatchPDF = () => {
+  // Export Batch Sheet PDF with 4 ID Cards per A4 page
+  const handleExportBatchPDF = async () => {
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4'
     });
 
+    const crestUri = await getSchoolCrestPngDataUrl();
+
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
+    doc.setFontSize(13);
     doc.setTextColor(0, 240, 255);
-    doc.text('I.E.T. FRANCISCO JOSÉ DE CALDAS - NATAGAIMA', 105, 15, { align: 'center' });
-    doc.setFontSize(10);
-    doc.setTextColor(100, 110, 130);
-    doc.text('HOJA DE IMPRESIÓN MASIVA DE CARNÉS ESTUDIANTILES QR (SOFTWORKER)', 105, 22, { align: 'center' });
+    doc.text('I.E.T. FRANCISCO JOSÉ DE CALDAS - NATAGAIMA', 105, 14, { align: 'center' });
+    doc.setFontSize(9);
+    doc.setTextColor(140, 150, 170);
+    doc.text('IMPRESIÓN MASIVA DE CARNÉS ESTUDIANTILES (CON CÓDIGO QR Y RH)', 105, 20, { align: 'center' });
 
     let xPos = 15;
-    let yPos = 30;
+    let yPos = 28;
     let cardCount = 0;
 
     filteredStudents.forEach((st, idx) => {
       const gObj = grados.find(g => g.id === st.grado_id);
       const grObj = grupos.find(g => g.id === st.grupo_id);
+      const epObj = epsList.find(e => e.id === st.eps_id);
 
-      // Draw Card Background
+      // Card Background
       doc.setFillColor(11, 15, 25);
       doc.rect(xPos, yPos, 85.6, 53.9, 'F');
       doc.setDrawColor(0, 240, 255);
       doc.setLineWidth(0.4);
       doc.rect(xPos + 1, yPos + 1, 83.6, 51.9);
 
+      // Add Crest
+      if (crestUri) {
+        try {
+          doc.addImage(crestUri, 'PNG', xPos + 2, yPos + 2, 8, 8);
+        } catch (err) {
+          console.warn("Could not add crest image:", err);
+        }
+      }
+
       // Card Header
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6);
+      doc.setFontSize(5.5);
       doc.setTextColor(0, 240, 255);
-      doc.text('I.E.T. FRANCISCO JOSÉ DE CALDAS', xPos + 42.8, yPos + 5, { align: 'center' });
+      doc.text('I.E.T. FRANCISCO JOSÉ DE CALDAS', xPos + 44, yPos + 4.5, { align: 'center' });
+      doc.setFontSize(4);
+      doc.setTextColor(0, 255, 102);
+      doc.text('NATAGAIMA TOLIMA', xPos + 44, yPos + 7.5, { align: 'center' });
 
       // Student info
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(6.5);
-      doc.text(`${st.nombres} ${st.apellidos}`, xPos + 4, yPos + 13);
+      doc.text(`${st.nombres} ${st.apellidos}`, xPos + 3, yPos + 13);
+      
       doc.setFontSize(5);
       doc.setTextColor(0, 240, 255);
-      doc.text(`CÓD: ${st.codigo_estudiantil}`, xPos + 4, yPos + 18);
+      doc.text(`CÓD: ${st.codigo_estudiantil}`, xPos + 3, yPos + 17.5);
+      
+      doc.setTextColor(200, 210, 225);
+      doc.text(`DOC: ${st.numero_doc}`, xPos + 3, yPos + 21);
+      const grupoText = grObj?.nombre_grupo ? ` - ${grObj.nombre_grupo}` : '';
+      doc.text(`GRADO: ${gObj?.nombre_grado || ''}${grupoText}`, xPos + 3, yPos + 24.5);
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 255, 102);
+      doc.text(`RH: ${st.rh || 'O+'}`, xPos + 3, yPos + 28);
+      
+      doc.setFont('helvetica', 'normal');
       doc.setTextColor(180, 190, 210);
-      doc.text(`DOC: ${st.numero_doc}`, xPos + 4, yPos + 22);
-      doc.text(`GRADO: ${gObj?.nombre_grado || ''} (${grObj?.nombre_grupo || ''})`, xPos + 4, yPos + 26);
+      doc.text(`EPS: ${epObj?.nombre_eps || 'Asmet Salud'}`, xPos + 3, yPos + 31.5);
 
-      // Add QR Code placeholder
+      // Add QR Code placeholder in pure white background box
       if (qrDataUrl) {
-        doc.addImage(qrDataUrl, 'PNG', xPos + 55, yPos + 12, 25, 25);
+        doc.setFillColor(255, 255, 255);
+        doc.rect(xPos + 54.5, yPos + 11.5, 26, 26, 'F');
+        try {
+          doc.addImage(qrDataUrl, 'PNG', xPos + 55, yPos + 12, 25, 25);
+        } catch (err) {
+          console.warn("Could not add QR image:", err);
+        }
       }
 
       cardCount++;
@@ -226,7 +282,7 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
       if (yPos > 240 && idx < filteredStudents.length - 1) {
         doc.addPage();
         xPos = 15;
-        yPos = 30;
+        yPos = 28;
       }
     });
 
@@ -241,10 +297,10 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
         <div>
           <h2 className="font-orbitron text-base font-bold text-[#00F0FF] flex items-center gap-2">
             <CreditCard className="w-5 h-5 text-[#00FF66]" />
-            Módulo de Carnetización QR Estudiantil
+            Módulo de Carnetización QR Estudiantil (Alto Contraste)
           </h2>
           <p className="text-xs text-slate-400 font-mono">
-            Generador de carnés individuales e impresión masiva en PDF para la I.E.T. Francisco José de Caldas
+            Carnés oficiales con Escudo Institucional, RH, EPS y Código QR en blanco/negro de alto contraste
           </p>
         </div>
 
@@ -315,7 +371,12 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
                     />
                     <div>
                       <p className="font-bold text-slate-100">{st.nombres} {st.apellidos}</p>
-                      <p className="text-[10px] text-[#00F0FF]">CÓD: {st.codigo_estudiantil}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-[#00F0FF]">CÓD: {st.codigo_estudiantil}</span>
+                        <span className="text-[10px] font-bold text-[#00FF66] bg-[#00FF66]/10 px-1.5 rounded">
+                          RH: {st.rh || 'O+'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-1 rounded-lg">
@@ -334,7 +395,7 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <h3 className="font-orbitron text-sm font-bold text-slate-200 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#00F0FF]" />
-              Vista Previa de Carné Institucional (CR80)
+              Carné Estudiantil Oficial (CR80)
             </h3>
 
             <div className="flex items-center space-x-2 font-mono text-xs">
@@ -371,24 +432,24 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
                 {/* Holographic background overlay */}
                 <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-[#00F0FF]/15 via-[#7000FF]/10 to-transparent rounded-full blur-2xl pointer-events-none"></div>
 
-                {/* Card Header */}
+                {/* Card Header with Official School Crest */}
                 <div className="border-b border-slate-800/80 pb-2 flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-7 h-7 bg-[#00F0FF]/20 border border-[#00F0FF] rounded-lg flex items-center justify-center text-[#00F0FF]">
-                      <ShieldCheck className="w-4 h-4" />
+                  <div className="flex items-center space-x-2.5">
+                    <div className="shrink-0 p-1 bg-white/10 border border-[#00F0FF]/40 rounded-lg">
+                      <SchoolCrest size={32} showGlow={false} />
                     </div>
                     <div>
-                      <h4 className="font-orbitron text-[11px] font-black tracking-wider text-slate-100 uppercase">
+                      <h4 className="font-orbitron text-[10px] font-black tracking-wider text-slate-100 uppercase">
                         I.E.T. FRANCISCO JOSÉ DE CALDAS
                       </h4>
                       <p className="text-[9px] text-[#00FF66] tracking-widest uppercase font-bold">
-                        NATAGAIMA - TOLIMA • CARNÉ ESTUDIANTIL
+                        NATAGAIMA TOLIMA • CARNÉ ESTUDIANTIL
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Card Body: Photo, Details & QR */}
+                {/* Card Body: Photo, Details & High Contrast QR */}
                 <div className="grid grid-cols-12 gap-3 items-center py-2">
                   <div className="col-span-8 space-y-1.5">
                     <div>
@@ -412,28 +473,28 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
                     <div className="grid grid-cols-2 gap-2 text-[10px]">
                       <div>
                         <span className="text-slate-400 block">Grado:</span>
-                        <span className="text-slate-200 font-bold">{gradoObj?.nombre_grado}</span>
+                        <span className="text-slate-200 font-bold">{gradoObj?.nombre_grado}{grupoObj?.nombre_grupo ? ` - ${grupoObj.nombre_grupo}` : ''}</span>
                       </div>
                       <div>
-                        <span className="text-slate-400 block">Sede:</span>
-                        <span className="text-slate-200 font-bold truncate block">{sedeObj?.nombre_sede.split('-')[0]}</span>
+                        <span className="text-[#00FF66] block font-bold">Sangre (RH):</span>
+                        <span className="text-[#00FF66] font-bold text-xs">{selectedStudent?.rh || 'O+'}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Dynamic QR Box */}
+                  {/* Dynamic High-Contrast Pure White QR Box */}
                   <div className="col-span-4 flex flex-col items-center justify-center space-y-1">
                     {qrDataUrl ? (
-                      <div className="p-1.5 bg-[#0b0f19] border border-[#00F0FF]/80 rounded-xl shadow-[0_0_15px_rgba(0,240,255,0.3)]">
-                        <img src={qrDataUrl} alt="QR Code" className="w-24 h-24 object-contain" />
+                      <div className="p-1 bg-white border border-[#00F0FF] rounded-xl shadow-[0_0_15px_rgba(0,240,255,0.4)]">
+                        <img src={qrDataUrl} alt="QR Code Alto Contraste" className="w-24 h-24 object-contain" />
                       </div>
                     ) : (
-                      <div className="w-24 h-24 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-slate-600">
-                        Generando...
+                      <div className="w-24 h-24 bg-white border border-slate-800 rounded-xl flex items-center justify-center text-slate-800 text-[9px] font-bold">
+                        Generando QR...
                       </div>
                     )}
                     <span className="text-[8px] text-[#00F0FF] font-bold uppercase tracking-widest">
-                      ESCANEAR QR
+                      QR ALTO CONTRASTE
                     </span>
                   </div>
                 </div>
@@ -459,19 +520,19 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
                 <div className="space-y-2 text-[10px] text-slate-300">
                   <div className="flex items-center gap-2">
                     <HeartPulse className="w-4 h-4 text-rose-400 shrink-0" />
-                    <span>EPS: <strong className="text-white">{epsObj?.nombre_eps}</strong></span>
+                    <span>EPS Afiliada: <strong className="text-white">{epsObj?.nombre_eps || 'Asmet Salud'}</strong></span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-[#00FF66] shrink-0" />
                     <span>Acudiente: <strong className="text-white">{acudienteObj ? `${acudienteObj.nombres} ${acudienteObj.apellidos} (${acudienteObj.telefono})` : 'N/A'}</strong></span>
                   </div>
                   <div className="p-2 bg-slate-900/90 border border-slate-800 rounded-xl text-[9px] text-slate-400">
-                    <strong className="text-amber-400">Observación Médica:</strong> {selectedStudent?.observacion_medica || 'Sin novedad reportada'}
+                    <strong className="text-amber-400">Observación Médica / Salud:</strong> {selectedStudent?.observacion_medica || 'Sin novedad médica reportada'}
                   </div>
                 </div>
 
                 <div className="pt-2 border-t border-slate-800 text-[8px] text-slate-500 text-center">
-                  Este carné es personal e transferible. En caso de pérdida informar inmediatamente a la Coordinación Académica.
+                  Este carné es intransferible. En caso de pérdida informar inmediatamente a la Coordinación Académica.
                 </div>
 
               </div>
@@ -494,7 +555,7 @@ export const QRCardGenerator: React.FC<QRCardGeneratorProps> = ({
               className="neon-btn-green px-5 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2"
             >
               <QrCode className="w-4 h-4" />
-              Descargar Solo Código QR (.PNG)
+              Descargar Solo QR PNG (#FFFFFF)
             </button>
           </div>
 
